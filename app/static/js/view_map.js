@@ -74,14 +74,22 @@ map.on("zoomstart", function() {
 map.on("zoomend", function(){
     cancelAnimationFrame(mapChanged);
 });
-$(window).resize(function() {
-    stretchOverlay();
-    if (drops) {
+map.on("resize", function(){
+    if("drops")
+    {    
+        stretchOverlay();
         overlayApi.stretch();
         drawMarkers()
     }
 });
-
+$("#reset-map").click(function (){
+    if(bbox){
+        map.fitBounds(bbox);
+    }
+    if(drops){
+        drawMarkers();
+    }
+});
 $(document).ready(function() {
     if (!localStorage.token) {
         logOut();
@@ -94,7 +102,9 @@ $(document).ready(function() {
             console.log(response.response);
             drops = response.response;
             bbox = getBbox(drops);
-            map.fitBounds(bbox);
+            if(bbox){
+                map.fitBounds(bbox);
+            }
             drawMarkers();
         }
     });

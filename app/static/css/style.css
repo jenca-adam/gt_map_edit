@@ -181,3 +181,11 @@ html, body{
     z-index:2;
     pointer-events:none;
 }
+#mapview-ui{
+    right:0;
+    bottom:0;
+    position:absolute;
+    display:flex;
+    padding:2em;
+    z-index:3;
+}
