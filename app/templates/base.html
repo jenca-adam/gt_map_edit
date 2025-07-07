@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<title>{%block title%}{%endblock%} - GT Map Editor</title>
+		<meta charset="utf-8">
+                <link rel="preconnect" href="https://fonts.googleapis.com">
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+                <link rel="stylesheet" href="/static/css/style.css">
+		{%block head%}
+		{%endblock%}
+	</head>
+	<body>
+                <div id="app">
+                <div id="banner">
+                    <div class="banner-items left">{%block bannerl%}{%endblock%}</div>
+                <div class="banner-items center"><h1 class="title">GT Map Editor</h1></div>
+                <div class="banner-items right">{%block bannerr%}{%endblock%}<button id="logout" class="button">Log Out</button></div>
+                </div>
+		{%block body%}
+		{%endblock%}
+                </div>
+		<script src="/static/js/jquery.min.js"></script>
+                <script src="/static/js/logout.js"></script>
+		{%block scripts%}
+
+		{%endblock%}
+	</body>
+</html>
+
+

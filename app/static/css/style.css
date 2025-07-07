@@ -1,0 +1,183 @@
+html, body{
+    color:#eee;
+    background:#333;
+    font-family:"Roboto Condensed";
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;
+}
+.tablist{
+    width:100%;
+    display:flex;
+}
+.tab-button{
+    flex:1;
+    text-transform: uppercase;
+    font-family:"Roboto";
+    font-weight:bold;
+    color:#ccc;
+    appearance:none;
+    border:none;
+    background:#222;
+    padding:1em;
+    cursor:pointer;
+    font-size:12pt;
+}
+.tab{
+    background:#111;
+}
+.tab-button:hover{
+    background:#444;
+    color:#fff;
+}
+.tab-button.active{
+    color:#fff;
+    border-bottom: 2px solid white;
+}
+.title{
+    text-transform: uppercase;
+}
+#banner {
+  background: #000;
+  margin: 0;
+  padding: 0.1em 0;
+  display: flex;
+  width:100%;
+}
+.center{
+    display:flex;
+    justify-content:center;
+    flex:1;
+}
+
+.banner-items{
+    align-items:stretch;
+    align-content:center;
+    margin:0em 1em;
+}
+
+#app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+}
+#site{
+    flex:1;
+    padding: 0 1em;
+    overflow: hidden;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+}
+.tabs {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-list {
+  overflow-y: auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  grid-gap: 8px;
+}
+.map {
+    border: 1px solid #eee;
+    padding: 0.5em;
+    border-radius: 5px;
+    position:relative;
+}
+.map-image-outer{
+    position:absolute;
+    top:0;
+    right:0;
+    height:100%;
+    z-index:1;
+}
+.map-image{
+    object-fit:cover;
+    width:100%;
+    height:100%;
+    mask-image: linear-gradient(to right,transparent 0%, rgba(0,0,0,0.7) 100%);
+}
+.map-overlay{
+    z-index: 2;
+    position:relative;
+    height:100%;
+}
+.map-select-container{
+    position:absolute;
+    bottom:5px;
+    right:0;
+}
+.map-ov-item{
+    margin: 5px 0;
+}
+.button{
+    background: #5a5;
+    color: #eee;
+    appearance: none;
+    border: none;
+    padding: 0.5em 2em;
+    border-radius: 3px;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-family: "Roboto";
+    cursor:pointer;
+    border: 2px solid #5a5;
+}
+.button:hover{
+    background: #eee;
+    color:#5a5;
+}
+.darkbox-container{
+    flex:1;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.darkbox{
+    background:#222;
+    padding:1em;
+    border: 1px solid #fff;
+    border-radius:5px;
+}
+.label{
+    margin: 0 1em;
+}
+
+.maps-search{
+  display: flex;
+  padding: 1em;
+  background: #555;
+}
+.maps-search-input{
+    flex:1;
+    padding:0.2em;
+}
+#mapview-map{
+    flex:1;
+    z-index:1;
+}
+.nopad{
+    padding:0!important;
+}
+#overlay{
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:2;
+    pointer-events:none;
+}

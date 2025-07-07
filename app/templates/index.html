@@ -1,0 +1,46 @@
+{%extends'base.html'%}
+{%block title%}Home{%endblock%}
+{%block body%}
+<template id="map-template">
+    <div class="map">
+        <div class="map-image-outer">
+            <img class="map-image">
+        </div>
+
+        <div class="map-overlay">
+            <h3 class="map-title map-ov-item"></h3>
+            <div class="map-owner-outer map-ov-item">by&nbsp;<span class="map-owner"></span></div>
+            <p class="map-drop-count-outer map-ov-item"><span class="map-count-count"></span>&nbsp;<span class="map-count-what"></span></p>
+            <p class="map-num-plays-outer map-ov-item"><span class="map-num-plays"></span><span>&nbsp;plays<span></p>
+            <div class="map-select-container"><button class="map-select button"></button></div>
+        </div>
+            </div>
+</template>
+<div id="loading">Loading...</div>
+<div id="site">
+<h1> Choose a map to view/edit </h1>
+<div class="tabs">
+    <div class="tablist">
+        <button data-tab="tab-own" class="tab-button">Own maps</button>
+        <button data-tab="tab-other" class="tab-button">Other maps</button>
+    </div>
+    <div class="tab active own" data-tab="tab-own">
+        <p class="loading"> loading own maps... </p>
+        <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+        <div class="map-list">
+        </div>
+    </div>
+    <div class="tab other" data-tab="tab-other">
+        <p class="loading"> loading other maps...</p>
+        <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+        <div class="map-list">
+        </div>
+    </div>
+</div>
+{%endblock%}
+{%block scripts%}
+<script src="/static/js/tabs.js"></script>
+<script src="/static/js/proxy.js"></script>
+<script src="/static/js/index.js"></script>
+{%endblock%}
+

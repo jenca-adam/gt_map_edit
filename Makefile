@@ -1,0 +1,6 @@
+core:
+	emcc core/core.c -s WASM=1 -s USE_WEBGL2=1   -s EXPORTED_FUNCTIONS='["_init_webgl", "_clear_screen", "_draw_markers", "_create_float_buffer", "_destroy_buffer", "_stretch"]'   -s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap", "HEAPF32"]'   -o app/static/js/core/core.js
+run:
+	python app/server.py
+.PHONY: core
+

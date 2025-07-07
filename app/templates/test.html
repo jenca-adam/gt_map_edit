@@ -1,0 +1,16 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebGL with WASM (C)</title>
+</head>
+<body>
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <script src="/static/app.js"></script>
+  <script>
+    Module.onRuntimeInitialized = () => {
+      Module.ccall("init_webgl");
+      Module.ccall("clear_screen", null, ["number", "number", "number"], [0.1, 0.6, 0.9]);
+    };
+  </script>
+</body>
+</html>

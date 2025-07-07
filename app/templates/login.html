@@ -1,0 +1,46 @@
+{%extends 'base.html'%}
+{%block title%}
+Log In
+{%endblock%}
+{%block body%}
+<div class="darkbox-container" id="login-wrapper">
+<div class="darkbox" id="login-container">
+	<hgroup>
+		<h1>Log In</h1>
+		<h3>You need to log in to your geotastic account to use the map editor</h3>
+	</hgroup>
+	<p id="form-error"></p>
+	<form id="login-method-select">
+		<p><input type="radio" name="lm" id="lms-mail-password"></input><label for="lms-mail-password" class="label">Mail &amp; Password</label></p>
+
+		<p><input type="radio" name="lm" id="lms-token"></input><label for="lms-token" class="label">Token</label></p>
+	</form >
+	<form id="form-mail-password" >
+		<p> <b>Warning:</b> This will log you out on your other sessions </p>
+		<p><label for="mail" class="label">Mail:</label><input type="email" id="mail" required></input></p>
+
+		<p><label for="password" class="label">Password:</label><input type="password" id="password" required></input></p>
+
+		<input type="submit" class="button" value="Log in"></input>
+
+	</form>
+	<form id="form-token">
+		<p><label for="token" class="label">Token:</label><input type="text" id="token" required></input></p>
+
+		<input type="submit" class="button" value="Log in"></input>
+
+	</form>
+</div>
+</div>
+{%endblock%}
+{%block scripts%}
+<script>
+var visitorId; //very dumb
+</script>
+<script type="module">
+import FingerprintJS from '/static/js/fp.min.js';
+FingerprintJS.load().then(fp => fp.get()).then(result => { visitorId = result.visitorId;});
+</script>
+<script src="/static/js/proxy.js"></script>
+<script src="/static/js/login.js"></script>
+{%endblock%}
