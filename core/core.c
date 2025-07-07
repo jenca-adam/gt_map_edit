@@ -94,8 +94,9 @@ int init_webgl() {
         "}\n";
     const char *point_fs_src = 
         "precision mediump float;\n"
+        "uniform vec3 color;\n"
         "void main(){\n"
-        "gl_FragColor=vec4(1.0,0.0,0.0,1.0);\n"
+        "gl_FragColor=vec4(color, 1.0);\n" //no alpha
         "}\n";
     emscripten_webgl_make_context_current(ctx);
     stretch();
@@ -150,7 +151,7 @@ GLfloat *create_float_buffer(int num){
 void destroy_buffer(void *buf){
     free(buf);
 }
-void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLfloat tw,  GLfloat ox, GLfloat oy, GLfloat zoom, GLfloat size){
+void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLfloat tw,  GLfloat ox, GLfloat oy, GLfloat zoom, GLfloat size, GLfloat cr, GLfloat cg, GLfloat cb){
     GLuint posobj;
     int w, h;
     emscripten_get_canvas_element_size("#overlay", &w, &h);
@@ -175,6 +176,8 @@ void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLf
     glUniform1f(u_halfwidth, w/2.0);
     GLint u_halfheight    = glGetUniformLocation(program_object, "halfheight");
     glUniform1f(u_halfheight, h/2.0);
+    GLint u_color = glGetUniformLocation(program_object, "color");
+    glUniform3f(u_color, cr, cg, cb);
     /*
     glVertexAttrib4f(1, tx, ty, tz, tw); // transform
     glDisableVertexAttribArray(1);

@@ -16,7 +16,14 @@ $("#mapview-map").click(function(ev) {
     var offset = $("#mapview-map").offset();
     console.log(map.layerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()));
 })
-
+function hexToRgb(hex) {
+    var bigint = parseInt(hex.substr(1), 16);
+    var r = ((bigint >> 16) & 255)/255.0;
+    var g = ((bigint >> 8) & 255)/255.0;
+    var b = (bigint & 255)/255.0;
+    return [r,g,b]
+}
+    
 function getBbox() {
     var bbox = [
         [Infinity, Infinity],
@@ -34,7 +41,7 @@ function getBbox() {
 
 function drawMarkers() {
     console.log(map.options.crs.transformation);
-    overlayApi.clearScreen(0, 0, 0, 0);
+    core.clearScreen(0, 0, 0, 0);
     /*var markerPositions = new Float32Array(drops.map((drop) => {
         var pt = map.latLngToContainerPoint(L.latLng(drop.lat, drop.lng));
         return [(pt.x - overlay.offsetWidth / 2) / overlay.offsetWidth * 2, -(pt.y - overlay.offsetHeight / 2) / overlay.offsetHeight * 2]
@@ -44,12 +51,15 @@ function drawMarkers() {
     var origin = map.getPixelOrigin();
     var zoom = map.getZoom();
     var panpos = map._getMapPanePos();
+    var rgb = hexToRgb($("#marker-color").val());
     console.log(markerPositions);
-    var buffer = overlayApi.createFloatBuffer(markerPositions.length);
+    var buffer = core.createFloatBuffer(markerPositions.length);
+    console.log(rgb);
     console.log(buffer);
     Module.HEAPF32.set(markerPositions, buffer / Float32Array.BYTES_PER_ELEMENT);
-    overlayApi.drawMarkers(buffer, markerPositions.length, transform._a, transform._b, transform._c, transform._d, origin.x-panpos.x, origin.y-panpos.y, zoom, 10.0);
-    overlayApi.destroyBuffer(buffer);
+
+    core.drawMarkers(buffer, markerPositions.length, transform._a, transform._b, transform._c, transform._d, origin.x-panpos.x, origin.y-panpos.y, zoom, 10.0, rgb[0], rgb[1], rgb[2]);
+    core.destroyBuffer(buffer);
 
 }
 
@@ -75,10 +85,10 @@ map.on("zoomend", function(){
     cancelAnimationFrame(mapChanged);
 });
 map.on("resize", function(){
-    if("drops")
+    if(drops)
     {    
         stretchOverlay();
-        overlayApi.stretch();
+        core.stretch();
         drawMarkers()
     }
 });
@@ -90,6 +100,7 @@ $("#reset-map").click(function (){
         drawMarkers();
     }
 });
+$("#marker-color").change(mapChanged);//it didnt!
 $(document).ready(function() {
     if (!localStorage.token) {
         logOut();
@@ -109,21 +120,4 @@ $(document).ready(function() {
         }
     });
 });
-Module.onRuntimeInitialized = () => {
-    if (overlayApi.initWebgl() == -1) {
-        alert("fail");
-    }
-    overlayApi.clearScreen(0, 0, 0, 0);
-};
-
-const overlayApi = {
-
-    initWebgl: Module.cwrap("init_webgl", "number", []),
-    clearScreen: Module.cwrap("clear_screen", "", ["number", "number", "number", "number"]),
-    drawMarkers: Module.cwrap("draw_markers", "", ["number", "number", "float", "float", "float", "float", "float", "float", "float", "float"]),
-    createFloatBuffer: Module.cwrap("create_float_buffer", "number", ["number"]),
-    destroyBuffer: Module.cwrap("destroy_buffer", "", ["number"]),
-    stretch: Module.cwrap("stretch", "", []),
-};
-
 //pmtiles.leafletRasterLayer(layer,{attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>'}).addTo(map)
