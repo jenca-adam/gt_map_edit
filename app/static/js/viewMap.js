@@ -3,6 +3,10 @@ const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
 const overlay = $("#overlay")[0];
 var drops;
 var bbox;
+var markerPositions;
+var markerPosBuffer;
+var dropsById = {};
+var activeId=0;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -12,9 +16,13 @@ const coverageLayer=L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1m4
     attribution: '&copy; Google'
 });
 $("#mapview-map").click(function(ev) {
-    console.log(ev);
     var offset = $("#mapview-map").offset();
-    console.log(map.layerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()));
+    var latLon = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom());
+    var drop = core.closestMarker(latLon.lat, latLon.lng, 500);
+    console.log(drop, latLon);
+    if(drop)    console.log(dropsById[drop]);
+    activeId=drop;
+    highlightActiveMarker();
 })
 function hexToRgb(hex) {
     var bigint = parseInt(hex.substr(1), 16);
@@ -38,31 +46,56 @@ function getBbox() {
     console.log(bbox);
     return bbox;
 }
+function makeMarkerBuffer() {
+    // creates a buffer of marker positions
+    // called every time markers update and when they load for the first time
+    markerPositions = new Float32Array(drops.map((drop)=>[drop.lat, drop.lng]).flat());
+    if(markerPosBuffer){
+        core.destroyBuffer(markerPosBuffer);
+    }
+    markerPosBuffer= core.createFloatBuffer(markerPositions.length);
+    Module.HEAPF32.set(markerPositions, markerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
+}
+function gridMarkers(){
+    var markerIds = new Uint32Array(drops.map((drop)=>drop.id));
+    var markerIdBuffer = core.createUintBuffer(markerPositions.length);
+    Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
+    core.loadMarkers(markerPosBuffer, markerIdBuffer, markerPositions.length, 1.0);
+    core.destroyBuffer(markerIdBuffer);
+}
+ 
+function _drawMarkers(buffer, l, rgb){
+    var transform = map.options.crs.transformation;
+    var origin = map.getPixelOrigin();
+    var zoom = map.getZoom();
+    var panpos = map._getMapPanePos();
 
+    core.drawMarkers(buffer, l, transform._a, transform._b, transform._c, transform._d, origin.x-panpos.x, origin.y-panpos.y, zoom, 10.0, rgb[0], rgb[1], rgb[2]);
+}
 function drawMarkers() {
+    if(!markerPositions) return;
     console.log(map.options.crs.transformation);
     core.clearScreen(0, 0, 0, 0);
     /*var markerPositions = new Float32Array(drops.map((drop) => {
         var pt = map.latLngToContainerPoint(L.latLng(drop.lat, drop.lng));
         return [(pt.x - overlay.offsetWidth / 2) / overlay.offsetWidth * 2, -(pt.y - overlay.offsetHeight / 2) / overlay.offsetHeight * 2]
     }).filter((loc) => loc[0] < 1 && loc[0] > -1 && loc[1] < 1 && loc[1] > -1).flat());*/
-    var markerPositions = new Float32Array(drops.map((drop)=>[drop.lat, drop.lng]).flat());
-    var transform = map.options.crs.transformation;
-    var origin = map.getPixelOrigin();
-    var zoom = map.getZoom();
-    var panpos = map._getMapPanePos();
     var rgb = hexToRgb($("#marker-color").val());
-    console.log(markerPositions);
-    var buffer = core.createFloatBuffer(markerPositions.length);
-    console.log(rgb);
-    console.log(buffer);
-    Module.HEAPF32.set(markerPositions, buffer / Float32Array.BYTES_PER_ELEMENT);
-
-    core.drawMarkers(buffer, markerPositions.length, transform._a, transform._b, transform._c, transform._d, origin.x-panpos.x, origin.y-panpos.y, zoom, 10.0, rgb[0], rgb[1], rgb[2]);
-    core.destroyBuffer(buffer);
-
+    _drawMarkers(markerPosBuffer, markerPositions.length, rgb);
 }
+function highlightActiveMarker(){
+    if(activeId){
+        var drop=dropsById[activeId];
 
+        var rgb = hexToRgb($("#marker-color").val());
+        var singleMarkerPosition = new Float32Array([drop.lat, drop.lng]);
+        var singlePositionBuffer = core.createFloatBuffer(2);
+        Module.HEAPF32.set(singleMarkerPosition, singlePositionBuffer/Float32Array.BYTES_PER_ELEMENT);
+        _drawMarkers(singlePositionBuffer, 2, [0,1,0]);
+
+    }
+        
+};
 function zoomToMarkers() {
     map.fitBounds(bbox);
 };
@@ -127,6 +160,11 @@ $(document).ready(function() {
             if(bbox){
                 map.fitBounds(bbox);
             }
+            makeMarkerBuffer();
+            for(var drop of drops){
+                dropsById[drop.id]=drop;
+            }
+            gridMarkers();
             drawMarkers();
         }
     });

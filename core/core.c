@@ -2,10 +2,28 @@
 #include <emscripten/html5.h>
 #include <stdio.h>
 #include <GLES2/gl2.h>
+#include <math.h>
+
+typedef struct marker{
+    float lat;
+    float lon;
+    unsigned int id;
+} marker;
+
+typedef struct marker_list{
+    marker m;
+    struct marker_list *next;
+} marker_list;
+
+typedef struct grid{
+    int width;
+    int height;
+    float res;
+    marker_list **g;
+} grid;
 
 GLuint program_object;
-
-
+grid g;
 // i have no idea what i'm doing
 GLuint LoadShader ( GLenum type, const char *shaderSrc )
 {
@@ -49,17 +67,92 @@ GLuint LoadShader ( GLenum type, const char *shaderSrc )
    return shader;
 
 }
+void print_grid(){
+    for (int i=0; i<g.height*g.width; i++){
+        marker_list *ml = g.g[i];
+        if(ml) printf("TILE %d:\n", i);
+            while(ml){
+                printf("    %f %f\n", ml->m.lat, ml->m.lon);
+                ml = ml->next;
+            }
 
+    }
+}
+void load_markers(float *xys, unsigned int *ids, int num, float grid_square_size){
+    int square_index = 0;
+    int width=360/grid_square_size;
+    int height=180/grid_square_size;
+    if(g.res!=grid_square_size){
+        g.width=width;
+        g.height=height;
+        g.g=calloc(g.width*g.height, sizeof(marker_list*));
+    }
+    g.res = grid_square_size;
+    for (int i=0; i<num; i+=2){
+        float lat=fmin(fmax(xys[i], -90), 90);
+        float lon=fmin(fmax(xys[i+1], -180), 180);
+        int lat_tile = (90+lat)/g.res;
+        int lon_tile = (180+lon)/g.res;
+        int grid_space = g.width*lat_tile+lon_tile;
+        printf("%f %f %d\n", lat, lon, grid_space);
+        marker_list *new = malloc(sizeof(marker_list));
+
+        new->m.lat = lat;
+        new->m.lon = lon;
+        new->m.id = ids[i/2];
+        new->next = g.g[grid_space];
+        g.g[grid_space] = new;
+    }
+    print_grid();
+}
+float distance(float lat1, float lng1, float lat2, float lng2){
+    float r = 6378137.0;
+    float phi1 = lat1*M_PI/180;
+    float phi2 = lat2*M_PI/180;
+    float phid = (lat2-lat1)*M_PI/180;
+    float phil = (lng2-lng1)*M_PI/180;
+    float a = pow(sin(phid/2.0),2)+cos(phi1)*cos(phi2)*pow(sin(phil/2.0),2);
+    float c = 2.0 * atan2(sqrt(a), sqrt(1-a));
+    return r*c;
+}
+
+unsigned int closest_marker(float lat, float lon, float mindist){
+    int center_lat = (90+lat)/g.res;
+    int center_lon = (180+lon)/g.res;
+    float closest_distance = mindist;
+    int closest_id = 0;
+    marker *closest_marker =NULL;
+    printf("TILE %d\n",g.width*center_lat+center_lon);
+    for (int la = center_lat-1; la<=center_lat+1; la++){
+        for (int lo = center_lon-1; lo<=center_lon+1; lo++){
+            marker_list *ml = g.g[g.width*la+lo];
+            while(ml){
+                float d = distance(ml->m.lat, ml->m.lon, lat, lon);
+                if(d<=closest_distance){
+                    closest_distance = d;
+                    closest_id = ml->m.id;
+                    closest_marker = &ml->m;
+                }
+                ml = ml->next;
+            }
+        }
+    }
+    if(closest_marker){
+        printf("%f %f", closest_marker->lat, closest_marker->lon);
+    }
+    return closest_id;
+}
 void stretch(){
     int width, height;
     emscripten_get_canvas_element_size("#overlay", &width, &height);
     glViewport(0, 0, width, height);
-
 }
+
 EMSCRIPTEN_KEEPALIVE
-int init_webgl() {
+int init() {
     GLint linked;
     EmscriptenWebGLContextAttributes attr;
+    g.res=0;
     emscripten_webgl_init_context_attributes(&attr);
     attr.alpha = true;
     attr.depth = true;
@@ -136,7 +229,7 @@ int init_webgl() {
       glDeleteProgram ( program_object );
       return -1;
    }
-
+    
     return 0;
 }
 
@@ -147,6 +240,9 @@ void clear_screen(float r, float g, float b, float a) {
 
 GLfloat *create_float_buffer(int num){
     return (GLfloat*)malloc(num*sizeof(GLfloat));
+}
+unsigned int *create_uint_buffer(int num){
+    return (unsigned int*)malloc(num*sizeof(unsigned int));
 }
 void destroy_buffer(void *buf){
     free(buf);
