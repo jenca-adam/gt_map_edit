@@ -41,11 +41,10 @@ $("#form-mail-password").submit((ev) => {
         logInMailPassword($("#mail").val(), $("#password").val()).then((tok) => {
             localStorage.setItem("token", tok);
             getUserInfoViaToken(tok).then((response) => {
-                if (response.status=="ok") {
+                if (response.status == "ok") {
                     localStorage.setItem("userData", JSON.stringify(response.response))
                     location.href = '/';
-                }
-                else{
+                } else {
                     console.error(response.message);
                 }
             });
@@ -58,9 +57,9 @@ $("#form-mail-password").submit((ev) => {
 $("#form-token").submit((ev) => {
     try {
         logInToken($("#token").val()).then((tok) => {
-            if(tok){
+            if (tok) {
                 localStorage.setItem("token", tok);
-                location.href='/';
+                location.href = '/';
             }
         });
     } finally {

@@ -1,4 +1,6 @@
-const map = L.map('mapview-map', {boxZoom:false}).setView([0, 0], 2);
+const map = L.map('mapview-map', {
+    boxZoom: false
+}).setView([0, 0], 2);
 const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
 const overlay = $("#overlay")[0];
 var drops;
@@ -28,107 +30,109 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
 });
 // MARKER INTERACTION
 
-$("#mapview-map").mousedown(function(ev){
-    dragStartPos=[ev.clientX, ev.clientY];
+$("#mapview-map").mousedown(function(ev) {
+    dragStartPos = [ev.clientX, ev.clientY];
     //MULTI SELECT
-    if (ev.shiftKey && ev.button === 0) {  // Left-click + Shift
-    isDraggingBox = true;
-    var offset = $("#mapview-map").offset();
-    
-    boxStart = map.mouseEventToLayerPoint(ev);
+    if (ev.shiftKey && ev.button === 0) { // Left-click + Shift
+        isDraggingBox = true;
+        var offset = $("#mapview-map").offset();
+
+        boxStart = map.mouseEventToLayerPoint(ev);
         L.DomUtil.disableTextSelection();
         console.log(map._panes.overlayPane);
-    box = L.DomUtil.create('div', 'zoom-box', map._panes.overlayPane);
-    box.style.position = 'absolute';
-    box.style.border = '2px dashed #38f';
-    box.style.backgroundColor = 'rgba(0, 119, 255, 0.1)';
+        box = L.DomUtil.create('div', 'zoom-box', map._panes.overlayPane);
+        box.style.position = 'absolute';
+        box.style.border = '2px dashed #38f';
+        box.style.backgroundColor = 'rgba(0, 119, 255, 0.1)';
 
-    map.dragging.disable();
-  }
+        map.dragging.disable();
+    }
 
 })
-$("#mapview-map").mousemove(function(ev){
-    if(!isDraggingBox) return;
+$("#mapview-map").mousemove(function(ev) {
+    if (!isDraggingBox) return;
 
     var offset = $("#mapview-map").offset();
-     boxEnd = map.mouseEventToLayerPoint(ev);
+    boxEnd = map.mouseEventToLayerPoint(ev);
 
 
-  const min = boxStart;
-  const max = boxEnd;
+    const min = boxStart;
+    const max = boxEnd;
 
-  const left = Math.min(min.x, max.x);
-  const top = Math.min(min.y, max.y);
-  const width = Math.abs(max.x - min.x);
-  const height = Math.abs(max.y - min.y);
+    const left = Math.min(min.x, max.x);
+    const top = Math.min(min.y, max.y);
+    const width = Math.abs(max.x - min.x);
+    const height = Math.abs(max.y - min.y);
 
-  box.style.left = `${left}px`;
-  box.style.top = `${top}px`;
-  box.style.width = `${width}px`;
-  box.style.height = `${height}px`;
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+    box.style.width = `${width}px`;
+    box.style.height = `${height}px`;
 });
-$("#mapview-map").mousemove(function(ev){
-    if(!drops) return; 
-    
-    var color = hexToRgb($("#marker-color").val(),1);
+$("#mapview-map").mousemove(function(ev) {
+    if (!drops) return;
+
+    var color = hexToRgb($("#marker-color").val(), 1);
     var offset = $("#mapview-map").offset();
     var x = ev.clientX - offset.left;
     var y = ev.clientY - offset.top;
 
-    var s = (core.isOnMarker(x, $("#mapview-map").height() - y)>>>0);
-    var screencolor=[((s>>24)&255), ((s>>16)&255), ((s>>8)&255)];
-    if (compareColors(screencolor, color)){
-        $("#mapview-map").css({"cursor":"pointer"});
-    }
-    else{
-        $("#mapview-map").css({"cursor": ""});
+    var s = (core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0);
+    var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
+    if (compareColors(screencolor, color)) {
+        $("#mapview-map").css({
+            "cursor": "pointer"
+        });
+    } else {
+        $("#mapview-map").css({
+            "cursor": ""
+        });
     }
 });
 $("#mapview-map").mouseup(function(ev) {
     map.dragging.enable();
-    if(isDraggingBox){
-        isDraggingBox=false;
-        if(box&&box.parentNode){
+    if (isDraggingBox) {
+        isDraggingBox = false;
+        if (box && box.parentNode) {
             box.parentNode.removeChild(box);
-        } 
-        box=null;
+        }
+        box = null;
 
         var offset = $("#mapview-map").offset();
-        const minx = Math.min(boxStart.x, boxEnd.x)-offset.left;
-        const miny = Math.min(boxStart.y, boxEnd.y)-offset.top;
-        const maxx = Math.max(boxStart.x, boxEnd.y)-offset.left;
-        const maxy = Math.max(boxStart.y, boxEnd.y)-offset.top;
-        const topLeft = map.project(map.containerPointToLatLng(L.point(minx, miny), map.getZoom()),1);
+        const minx = Math.min(boxStart.x, boxEnd.x) - offset.left;
+        const miny = Math.min(boxStart.y, boxEnd.y) - offset.top;
+        const maxx = Math.max(boxStart.x, boxEnd.x) - offset.left;
+        const maxy = Math.max(boxStart.y, boxEnd.y) - offset.top;
+        const topLeft = map.project(map.containerPointToLatLng(L.point(minx, miny), map.getZoom()), 1);
 
-        const botRight = map.project(map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom()),1);
+        const botRight = map.project(map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom()), 1);
         boxSelect(topLeft.x, topLeft.y, botRight.x, botRight.y);
     }
     console.log(dragStartPos, ev.clientX, ev.clientY);
-    if(dragStartPos[0]!=ev.clientX||dragStartPos[1]!=ev.clientY){
+    if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
         return;
     }
     var offset = $("#mapview-map").offset();
     var x = ev.clientX - offset.left;
     var y = ev.clientY - offset.top;
     var color = hexToRgb($("#marker-color").val(), 1);
-    var s = core.isOnMarker(x, $("#mapview-map").height() - y)>>>0;
-    var screencolor=[((s>>24)&255), ((s>>16)&255), ((s>>8)&255)];
+    var s = core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0;
+    var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
     console.log(screencolor);
     if (compareColors(screencolor, color)) {
 
-        var xy = map.project(map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()),1);
+        var xy = map.project(map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()), 1);
         var drop = core.closestMarker(xy.x, xy.y, Infinity);
         console.log(drop, xy);
-        if(!ev.shiftKey){
-        selectedMarkers = [];
+        if (!ev.shiftKey) {
+            selectedMarkers = [];
         }
         selectedMarkers.push(drop);
         if (drop) console.log(dropsById[drop]);
         activeId = drop;
         makeMarkerBuffer();
         drawMarkers();
-    }
-    else if (selectedMarkers&&!ev.shiftKey){
+    } else if (selectedMarkers && !ev.shiftKey) {
         selectedMarkers = [];
         makeMarkerBuffer();
         drawMarkers();
@@ -137,20 +141,22 @@ $("#mapview-map").mouseup(function(ev) {
 
 
 // utils
-function boxSelect(x1, y1, x2, y2){
+function boxSelect(x1, y1, x2, y2) {
     const idBuffer = core.createUintBuffer(drops.length);
     const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
-    const dropIds = Module.HEAPU32.slice(idBuffer/Uint32Array.BYTES_PER_ELEMENT, idBuffer/Uint32Array.BYTES_PER_ELEMENT+numDrops);
+    const dropIds = Module.HEAPU32.slice(idBuffer / Uint32Array.BYTES_PER_ELEMENT, idBuffer / Uint32Array.BYTES_PER_ELEMENT + numDrops);
     console.log(dropIds);
     selectedMarkers.push(...dropIds);
-    if(numDrops>0){
+    if (numDrops > 0) {
         makeMarkerBuffer();
         drawMarkers();
     }
 }
-function compareColors(rgb1, rgb2){
-    return rgb1[0]==rgb2[0]&&rgb1[1]==rgb2[1]&&rgb1[2]==rgb2[2]
+
+function compareColors(rgb1, rgb2) {
+    return rgb1[0] == rgb2[0] && rgb1[1] == rgb2[1] && rgb1[2] == rgb2[2]
 }
+
 function hexToRgb(hex, div = 255.0) {
     var bigint = hexToPack(hex);
     var r = ((bigint >> 16) & 255) / div;
@@ -158,9 +164,11 @@ function hexToRgb(hex, div = 255.0) {
     var b = (bigint & 255) / div;
     return [r, g, b]
 }
-function hexToPack(hex){
+
+function hexToPack(hex) {
     return parseInt(hex.substr(1), 16);
 }
+
 function getBbox() {
     var bbox = [
         [Infinity, Infinity],
@@ -191,20 +199,22 @@ function makeMarkerBuffer() {
     }
     markerPosBuffer = core.createFloatBuffer(markerPositions.length);
     Module.HEAPF32.set(markerPositions, markerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
-    if(selectedMarkers){
+    if (selectedMarkers) {
         selMarkerPositions = new Float32Array(
             selectedMarkers.map(
-                (dropId) => { var drop=dropsById[dropId]; return [drop.lat, drop.lng]}
+                (dropId) => {
+                    var drop = dropsById[dropId];
+                    return [drop.lat, drop.lng]
+                }
             ).flat()
         );
-        
+
         if (selMarkerPosBuffer) {
             core.destroyBuffer(selMarkerPosBuffer);
         }
-         selMarkerPosBuffer = core.createFloatBuffer(selMarkerPositions.length);
-         Module.HEAPF32.set(selMarkerPositions, selMarkerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
-    }
-    else if(selMarkerPosBuffer){
+        selMarkerPosBuffer = core.createFloatBuffer(selMarkerPositions.length);
+        Module.HEAPF32.set(selMarkerPositions, selMarkerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
+    } else if (selMarkerPosBuffer) {
         core.destroyBuffer(selMarkerPosBuffer);
     }
 }
@@ -212,10 +222,13 @@ function makeMarkerBuffer() {
 function gridMarkers() {
     var markerIds = new Uint32Array(drops.map((drop) => drop.id));
     var markerIdBuffer = core.createUintBuffer(markerPositions.length);
-    var projectedMarkers = new Float32Array(drops.map((drop) => {var p = map.project(L.latLng(drop.lat, drop.lng), 1); return [p.x, p.y]}).flat());
+    var projectedMarkers = new Float32Array(drops.map((drop) => {
+        var p = map.project(L.latLng(drop.lat, drop.lng), 1);
+        return [p.x, p.y]
+    }).flat());
     var projectedMarkersBuffer = core.createFloatBuffer(projectedMarkers.length);
     Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
-    Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer/Float32Array.BYTES_PER_ELEMENT);
+    Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer / Float32Array.BYTES_PER_ELEMENT);
     core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length, 1.0);
     core.destroyBuffer(markerIdBuffer);
     core.destroyBuffer(projectedMarkersBuffer);
@@ -227,7 +240,7 @@ function _drawMarkers(buf1, l1, buf2, l2, rgb) {
     var zoom = map.getZoom();
     var panpos = map._getMapPanePos();
 
-    core.drawMarkers(buf1, l1,buf2, l2, transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, 11.0, rgb[0], rgb[1], rgb[2], 1-rgb[0], 1-rgb[1], 1-rgb[2]);
+    core.drawMarkers(buf1, l1, buf2, l2, transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, 11.0, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2]);
 }
 
 function drawMarkers() {
@@ -239,7 +252,7 @@ function drawMarkers() {
         return [(pt.x - overlay.offsetWidth / 2) / overlay.offsetWidth * 2, -(pt.y - overlay.offsetHeight / 2) / overlay.offsetHeight * 2]
     }).filter((loc) => loc[0] < 1 && loc[0] > -1 && loc[1] < 1 && loc[1] > -1).flat());*/
     var rgb = hexToRgb($("#marker-color").val());
-    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.length*2, rgb);
+    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.length * 2, rgb);
 }
 
 function highlightActiveMarker() {
@@ -319,13 +332,13 @@ $(document).ready(function() {
             if (bbox) {
                 map.fitBounds(bbox);
             }
-            core.waitInitted().then(()=>{
-            makeMarkerBuffer();
-            for (var drop of drops) {
-                dropsById[drop.id] = drop;
-            }
-            gridMarkers();
-            drawMarkers();
+            core.waitInitted().then(() => {
+                makeMarkerBuffer();
+                for (var drop of drops) {
+                    dropsById[drop.id] = drop;
+                }
+                gridMarkers();
+                drawMarkers();
             });
         }
     });

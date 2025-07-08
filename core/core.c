@@ -161,6 +161,7 @@ unsigned int closest_marker(float x, float y,  float mindist){
             }
         }
     }
+    printf("DISTANCE %f\n", closest_distance);
     return closest_id;
 }
 unsigned int box_select(float x1, float y1, float x2, float y2, unsigned int *id_buffer){
@@ -168,8 +169,8 @@ unsigned int box_select(float x1, float y1, float x2, float y2, unsigned int *id
     int buffer_index=0;
     int tile_x1=x1/g.res;
     int tile_y1=y1/g.res;
-    int tile_x2=ceil((float)x2/(float)g.res);
-    int tile_y2=ceil((float)y2/(float)g.res);
+    int tile_x2=x2/g.res;
+    int tile_y2=y2/g.res;
     for (int lx = tile_x1; lx<=tile_x2; lx++){
         for (int ly = tile_y1; ly<=tile_y2; ly++){
             if(lx<0||lx>g.width||ly<0||ly>g.height) continue;

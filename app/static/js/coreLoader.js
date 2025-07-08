@@ -2,14 +2,14 @@ Module.onRuntimeInitialized = () => {
     if (core.init() == -1) {
         alert("fail");
     }
-    core._INITTED=true;
+    core._INITTED = true;
     core.clearScreen(0, 0, 0, 0);
 };
 const core = {
-    _INITTED:false,
-    waitInitted: (async ()=>{
-        while (!core._INITTED){
-           await new Promise(r => setTimeout(r, 10)); 
+    _INITTED: false,
+    waitInitted: (async () => {
+        while (!core._INITTED) {
+            await new Promise(r => setTimeout(r, 10));
         }
         return true;
     }),
@@ -23,6 +23,5 @@ const core = {
     loadMarkers: Module.cwrap("load_markers", "", ["number", "number", "number", "float"]),
     closestMarker: Module.cwrap("closest_marker", "number", ["float", "float", "float"]),
     isOnMarker: Module.cwrap("is_on_marker", "number", ["number", "number"]),
-    boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"]) 
+    boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"])
 };
-
