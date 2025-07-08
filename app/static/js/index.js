@@ -24,7 +24,7 @@ const showOwnMaps = ()=>{
                 $(clone).find(".map-num-plays").text(map.timesPlayed);
                 $(clone).find(".map-select").data("id",map.id);
                 $(clone).find(".map-select").text("Edit");
-                $(clone).find(".map-select").click(function(){console.log($(this).data("id"))});
+                $(clone).find(".map-select").click(function(){location.href=("/view-map/"+$(this).data("id"))});
                 $(".tab.own .maps-search-input").keyup();
                 ownMapList.append(clone);
             }

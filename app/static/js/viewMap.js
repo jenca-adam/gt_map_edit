@@ -66,7 +66,7 @@ $("#mapview-map").mouseup(function(ev) {
         makeMarkerBuffer();
         drawMarkers();
     }
-    else if (selectedMarkers){
+    else if (selectedMarkers&&!ev.shiftKey){
         selectedMarkers = [];
         makeMarkerBuffer();
         drawMarkers();
