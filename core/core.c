@@ -114,15 +114,13 @@ float distance(float lat1, float lng1, float lat2, float lng2){
     float c = 2.0 * atan2(sqrt(a), sqrt(1-a));
     return r*c;
 }
-int is_on_marker(int x, int y, float r, float g, float b){
+unsigned int is_on_marker(int x, int y){
     GLubyte col[4];
     glFlush();
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glReadPixels(x,y,1,1,GL_RGBA,GL_UNSIGNED_BYTE, col);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    printf("%d %d %d %d %d %d\n", x, y, col[0], col[1], col[2], col[3]);
-    int is=col[0]==r&&col[1]==g&&col[2]==b&&col[3]!=0;
-    return is;
+    return *(unsigned int*)col;
 }
 unsigned int closest_marker(float lat, float lon,  float mindist){
     int center_lat = (90+lat)/g.res;
@@ -252,9 +250,6 @@ int init() {
     glAttachShader(program_object, point_fs);
 
     glBindAttribLocation(program_object, 0, "latlng" );
-    glBindAttribLocation(program_object, 1, "mcenter");
-    glBindAttribLocation(program_object, 2, "msize");
-    glBindAttribLocation(program_object, 3, "height");
     /*glBindAttribLocation(program_object, 1, "transform");
     glBindAttribLocation(program_object, 2, "origin");
     glBindAttribLocation(program_object, 3, "zoom");
@@ -301,15 +296,24 @@ unsigned int *create_uint_buffer(int num){
 void destroy_buffer(void *buf){
     free(buf);
 }
-void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLfloat tw,  GLfloat ox, GLfloat oy, GLfloat zoom, GLfloat size, GLfloat cr, GLfloat cg, GLfloat cb){
-    GLuint posobj;
+void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat tx, GLfloat ty, GLfloat tz, GLfloat tw,  GLfloat ox, GLfloat oy, GLfloat zoom, GLfloat size, GLfloat cr, GLfloat cg, GLfloat cb, GLfloat scr, GLfloat scg, GLfloat scb){
+    GLuint posobj=0, sposobj=0;
     int w, h;
     emscripten_get_canvas_element_size("#overlay", &w, &h);
+    printf("%d %f\n", snum, sxys[0]);
+    if(snum){
+        glGenBuffers(1, &sposobj);
+        glBindBuffer(GL_ARRAY_BUFFER, sposobj);
+        glBufferData(GL_ARRAY_BUFFER, snum*sizeof(GLfloat), sxys, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
+        glEnableVertexAttribArray(0);
+
+    }
+    
     glGenBuffers(1, &posobj);
     glBindBuffer(GL_ARRAY_BUFFER, posobj);
     glBufferData(GL_ARRAY_BUFFER, num*sizeof(GLfloat), xys, GL_STATIC_DRAW);
     glUseProgram(program_object);
-    glBindBuffer(GL_ARRAY_BUFFER, posobj);
     // latlns are in xys
     glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(0);
@@ -342,12 +346,35 @@ void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLf
     glVertexAttrib1f(6, h/2.0);
     glDisableVertexAttribArray(6);
     */
+    // FBO COPY
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glBindBuffer(GL_ARRAY_BUFFER, posobj);
     glDrawArrays ( GL_POINTS, 0, num/2);
+    if(sposobj){
+        glBindBuffer(GL_ARRAY_BUFFER, sposobj);
+
+        glUniform3f(u_color, scr, scg, scb);
+        glDrawArrays(GL_POINTS, 0, snum/2);
+        glBindBuffer(GL_ARRAY_BUFFER, posobj);
+        glUniform3f(u_color, cr, cg, cb);
+
+    } 
+    // default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDrawArrays (GL_POINTS, 0, num/2);
+    glDrawArrays ( GL_POINTS, 0, num/2);
+    if(sposobj){
+        printf("%d", sposobj);
+        glBindBuffer(GL_ARRAY_BUFFER, sposobj);
+        glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0); 
+        glEnableVertexAttribArray(0);
+        glUniform3f(u_color, scr, scg, scb);
+        glDrawArrays(GL_POINTS, 0, snum/2);
+        glDeleteBuffers(1, &sposobj);
+    } 
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, &posobj);
+    glFlush();
 
 }
 
