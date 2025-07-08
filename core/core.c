@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <GLES2/gl2.h>
 #include <math.h>
-
+#include <stdint.h>
 typedef struct marker{
     float lat;
     float lon;
@@ -23,6 +23,7 @@ typedef struct grid{
 } grid;
 
 GLuint program_object;
+GLuint fbo=0, fbo_tex=0;
 grid g;
 // i have no idea what i'm doing
 GLuint LoadShader ( GLenum type, const char *shaderSrc )
@@ -50,7 +51,7 @@ GLuint LoadShader ( GLenum type, const char *shaderSrc )
       GLint infoLen = 0;
 
       glGetShaderiv ( shader, GL_INFO_LOG_LENGTH, &infoLen );
-      
+      printf("COMPILATION FAILED\n"); 
       if ( infoLen > 1 )
       {
          char* infoLog = malloc (sizeof(char) * infoLen );
@@ -94,7 +95,6 @@ void load_markers(float *xys, unsigned int *ids, int num, float grid_square_size
         int lat_tile = (90+lat)/g.res;
         int lon_tile = (180+lon)/g.res;
         int grid_space = g.width*lat_tile+lon_tile;
-        printf("%f %f %d\n", lat, lon, grid_space);
         marker_list *new = malloc(sizeof(marker_list));
 
         new->m.lat = lat;
@@ -103,7 +103,6 @@ void load_markers(float *xys, unsigned int *ids, int num, float grid_square_size
         new->next = g.g[grid_space];
         g.g[grid_space] = new;
     }
-    print_grid();
 }
 float distance(float lat1, float lng1, float lat2, float lng2){
     float r = 6378137.0;
@@ -115,8 +114,17 @@ float distance(float lat1, float lng1, float lat2, float lng2){
     float c = 2.0 * atan2(sqrt(a), sqrt(1-a));
     return r*c;
 }
-
-unsigned int closest_marker(float lat, float lon, float mindist){
+int is_on_marker(int x, int y, float r, float g, float b){
+    GLubyte col[4];
+    glFlush();
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glReadPixels(x,y,1,1,GL_RGBA,GL_UNSIGNED_BYTE, col);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    printf("%d %d %d %d %d %d\n", x, y, col[0], col[1], col[2], col[3]);
+    int is=col[0]==r&&col[1]==g&&col[2]==b&&col[3]!=0;
+    return is;
+}
+unsigned int closest_marker(float lat, float lon,  float mindist){
     int center_lat = (90+lat)/g.res;
     int center_lon = (180+lon)/g.res;
     float closest_distance = mindist;
@@ -146,6 +154,27 @@ void stretch(){
     int width, height;
     emscripten_get_canvas_element_size("#overlay", &width, &height);
     glViewport(0, 0, width, height);
+    if(fbo){
+        glDeleteFramebuffers(1, &fbo);
+    }
+    if(fbo_tex){
+        glDeleteTextures(1, &fbo_tex);
+    }
+    glGenFramebuffers(1, &fbo);
+    glGenTextures(1, &fbo_tex);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glBindTexture(GL_TEXTURE_2D, fbo_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_tex, 0);
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        printf("Framebuffer not complete. Status: 0x%x\n", status);
+        return;
+}
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -161,13 +190,17 @@ int init() {
     attr.majorVersion = 2; // WebGL2
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#overlay", &attr);
     const char *point_vs_src = 
-        "attribute vec2 latlng;\n"
+        "#version 300 es\n"
+        "in vec2 latlng;\n"
         "uniform vec4 transform;\n"
         "uniform vec2 origin;\n"
         "uniform float zoom;\n"
         "uniform float size;\n"
         "uniform float halfwidth;\n"
         "uniform float halfheight;\n"
+        "out vec2 mcenter;\n"
+        "out float msize;\n"
+        "out float height;\n"
         "vec2 project(vec2 ll){\n"
             "float lat=max(min(85.0511287798, ll.x), -85.0511287798);\n"
             "float s=sin(lat*0.017453292519943295);\n"
@@ -182,14 +215,29 @@ int init() {
         "}\n"
         "void main(){\n"
             "vec2 a=lat_lng_to_point(latlng, transform, origin, zoom);\n"
+            "vec2 center=vec2((a.x-halfwidth)/halfwidth, -(a.y-halfheight)/halfheight);\n"
+            "mcenter=a;\n"
+            "msize=size;\n"
+            "height=halfheight*2.0;\n"
             "gl_PointSize=size;\n"
-            "gl_Position=vec4((a.x-halfwidth)/halfwidth, -(a.y-halfheight)/halfheight, 0.0, 1.0);\n"
+            "gl_Position=vec4(center, 0.0, 1.0);\n"
         "}\n";
     const char *point_fs_src = 
+        "#version 300 es\n"
         "precision mediump float;\n"
-        "uniform vec3 color;\n"
+        "uniform vec3 marker_color;\n"
+        "in vec2 mcenter;\n"
+        "in float msize;\n"
+        "in float height;\n"
+        "out vec4 color;\n"
         "void main(){\n"
-        "gl_FragColor=vec4(color, 1.0);\n" //no alpha
+            "vec2 position=vec2(gl_FragCoord.x, height-gl_FragCoord.y);\n"
+            "if(distance(position, mcenter)<=msize*0.5){\n" // circles
+                "color=vec4(marker_color, 1.0);\n" 
+            "}\n"
+            "else{\n"
+                "color=vec4(0.0 ,0.0,0.0,0.0);\n"
+            "}\n"
         "}\n";
     emscripten_webgl_make_context_current(ctx);
     stretch();
@@ -197,13 +245,16 @@ int init() {
     GLuint point_fs = LoadShader(GL_FRAGMENT_SHADER, point_fs_src);
     program_object = glCreateProgram();
     printf("%d %d %d\n", point_vs, point_fs, program_object);
-    if(!program_object){
+    if(!program_object|!point_vs|!point_fs){
         return -1;
     }
     glAttachShader(program_object, point_vs);
     glAttachShader(program_object, point_fs);
 
     glBindAttribLocation(program_object, 0, "latlng" );
+    glBindAttribLocation(program_object, 1, "mcenter");
+    glBindAttribLocation(program_object, 2, "msize");
+    glBindAttribLocation(program_object, 3, "height");
     /*glBindAttribLocation(program_object, 1, "transform");
     glBindAttribLocation(program_object, 2, "origin");
     glBindAttribLocation(program_object, 3, "zoom");
@@ -229,13 +280,16 @@ int init() {
       glDeleteProgram ( program_object );
       return -1;
    }
-    
     return 0;
 }
 
 void clear_screen(float r, float g, float b, float a) {
     glClearColor(r, g, b, a);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glClear(GL_COLOR_BUFFER_BIT);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
 }
 
 GLfloat *create_float_buffer(int num){
@@ -272,7 +326,7 @@ void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLf
     glUniform1f(u_halfwidth, w/2.0);
     GLint u_halfheight    = glGetUniformLocation(program_object, "halfheight");
     glUniform1f(u_halfheight, h/2.0);
-    GLint u_color = glGetUniformLocation(program_object, "color");
+    GLint u_color = glGetUniformLocation(program_object, "marker_color");
     glUniform3f(u_color, cr, cg, cb);
     /*
     glVertexAttrib4f(1, tx, ty, tz, tw); // transform
@@ -288,7 +342,10 @@ void draw_markers(GLfloat *xys, int num, GLfloat tx, GLfloat ty, GLfloat tz, GLf
     glVertexAttrib1f(6, h/2.0);
     glDisableVertexAttribArray(6);
     */
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glDrawArrays ( GL_POINTS, 0, num/2);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDrawArrays (GL_POINTS, 0, num/2);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, &posobj);
 

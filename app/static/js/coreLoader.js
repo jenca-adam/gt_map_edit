@@ -16,6 +16,7 @@ const core = {
     stretch: Module.cwrap("stretch", "", []),
     loadMarkers: Module.cwrap("load_markers", "", ["number", "number", "number", "float"]),
     closestMarker: Module.cwrap("closest_marker", "number", ["float", "float", "float"]),
+    isOnMarker: Module.cwrap("is_on_marker", "number", ["number", "number", "float", "float", "float"])
     
 };
 

@@ -17,18 +17,24 @@ const coverageLayer=L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1m4
 });
 $("#mapview-map").click(function(ev) {
     var offset = $("#mapview-map").offset();
-    var latLon = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom());
-    var drop = core.closestMarker(latLon.lat, latLon.lng, 500);
-    console.log(drop, latLon);
-    if(drop)    console.log(dropsById[drop]);
-    activeId=drop;
-    highlightActiveMarker();
+    var x = ev.clientX-offset.left;
+    var y = ev.clientY-offset.top;
+    var color = hexToRgb($("#marker-color").val(), 1);
+    if(core.isOnMarker(x,$("#mapview-map").height()-y, color[0], color[1], color[2])){
+    
+        var latLon = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom());
+        var drop = core.closestMarker(latLon.lat, latLon.lng, Infinity);
+        console.log(drop, latLon);
+        if(drop)    console.log(dropsById[drop]);
+        activeId=drop;
+        highlightActiveMarker();
+    }
 })
-function hexToRgb(hex) {
+function hexToRgb(hex, div=255.0) {
     var bigint = parseInt(hex.substr(1), 16);
-    var r = ((bigint >> 16) & 255)/255.0;
-    var g = ((bigint >> 8) & 255)/255.0;
-    var b = (bigint & 255)/255.0;
+    var r = ((bigint >> 16) & 255)/div;
+    var g = ((bigint >> 8) & 255)/div;
+    var b = (bigint & 255)/div;
     return [r,g,b]
 }
     
