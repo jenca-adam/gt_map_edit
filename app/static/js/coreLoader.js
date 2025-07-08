@@ -2,11 +2,17 @@ Module.onRuntimeInitialized = () => {
     if (core.init() == -1) {
         alert("fail");
     }
+    core._INITTED=true;
     core.clearScreen(0, 0, 0, 0);
 };
-
 const core = {
-
+    _INITTED:false,
+    waitInitted: (async ()=>{
+        while (!core._INITTED){
+           await new Promise(r => setTimeout(r, 10)); 
+        }
+        return true;
+    }),
     init: Module.cwrap("init", "number", []),
     clearScreen: Module.cwrap("clear_screen", "", ["number", "number", "number", "number"]),
     drawMarkers: Module.cwrap("draw_markers", "", ["number", "number", "number", "number", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float"]),

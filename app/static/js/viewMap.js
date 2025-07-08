@@ -240,12 +240,14 @@ $(document).ready(function() {
             if (bbox) {
                 map.fitBounds(bbox);
             }
+            core.waitInitted().then(()=>{
             makeMarkerBuffer();
             for (var drop of drops) {
                 dropsById[drop.id] = drop;
             }
             gridMarkers();
             drawMarkers();
+            });
         }
     });
 });
