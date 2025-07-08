@@ -1,4 +1,4 @@
-const map = L.map('mapview-map').setView([0, 0], 1);
+const map = L.map('mapview-map', {boxZoom:false}).setView([0, 0], 1);
 const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
 const overlay = $("#overlay")[0];
 var drops;
@@ -11,6 +11,9 @@ var selMarkerPosBuffer = 0;
 var dropsById = {};
 var activeId = 0;
 var dragStartPos;
+var isDraggingBox = false;
+var box;
+var boxStart;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -20,9 +23,42 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     maxZoom: 19,
     attribution: '&copy; Google'
 });
+// MARKER INTERACTION
+
 $("#mapview-map").mousedown(function(ev){
     dragStartPos=[ev.clientX, ev.clientY];
+    //MULTI SELECT
+    if (ev.shiftKey && ev.button === 0) {  // Left-click + Shift
+    isDraggingBox = true;
+    boxStart = map.mouseEventToContainerPoint(ev);
+     L.DomUtil.disableTextSelection();
+        console.log(map._panes.overlayPane);
+    box = L.DomUtil.create('div', 'zoom-box', map._panes.overlayPane);
+    box.style.position = 'absolute';
+    box.style.border = '2px dashed #38f';
+    box.style.backgroundColor = 'rgba(0, 119, 255, 0.1)';
+
+    map.dragging.disable();
+  }
+
 })
+$("#mapview-map").mousemove(function(ev){
+    if(!isDraggingBox) return;
+     const boxEnd = map.mouseEventToContainerPoint(ev);
+
+  const min = boxStart;
+  const max = boxEnd;
+
+  const left = Math.min(min.x, max.x);
+  const top = Math.min(min.y, max.y);
+  const width = Math.abs(max.x - min.x);
+  const height = Math.abs(max.y - min.y);
+
+  box.style.left = `${left}px`;
+  box.style.top = `${top}px`;
+  box.style.width = `${width}px`;
+  box.style.height = `${height}px`;
+});
 $("#mapview-map").mousemove(function(ev){
     if(!drops) return; 
     
@@ -41,6 +77,14 @@ $("#mapview-map").mousemove(function(ev){
     }
 });
 $("#mapview-map").mouseup(function(ev) {
+    map.dragging.enable();
+    if(isDraggingBox){
+        isDraggingBox=false;
+        if(box&&box.parentNode){
+            box.parentNode.removeChild(box);
+        }
+        box=null;
+    }
     console.log(dragStartPos, ev.clientX, ev.clientY);
     if(dragStartPos[0]!=ev.clientX||dragStartPos[1]!=ev.clientY){
         return;
@@ -73,6 +117,8 @@ $("#mapview-map").mouseup(function(ev) {
     }
 })
 
+
+// utils
 function compareColors(rgb1, rgb2){
     return rgb1[0]==rgb2[0]&&rgb1[1]==rgb2[1]&&rgb1[2]==rgb2[2]
 }
