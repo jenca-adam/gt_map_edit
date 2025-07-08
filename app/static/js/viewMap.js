@@ -1,4 +1,4 @@
-const map = L.map('mapview-map', {boxZoom:false}).setView([0, 0], 1);
+const map = L.map('mapview-map', {boxZoom:false}).setView([0, 0], 2);
 const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
 const overlay = $("#overlay")[0];
 var drops;
@@ -14,13 +14,16 @@ var dragStartPos;
 var isDraggingBox = false;
 var box;
 var boxStart;
+var boxEnd;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
+    maxZoom: 16,
+    minZoom: 2,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
 const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e2*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*212b1!3m18!2sen!3sUS!5e0!12m4!1e68!2m2!1sset!2sRoadmap!12m4!1e37!2m2!1ssmartmaps!2s!12m4!1e26!2m2!1sstyles!2ss.e:g|p.c:#f03e3e|p.w:10,s.e:g.s|p.v:off!4i0!5m2!1e0!5f2', {
-    maxZoom: 19,
+    maxZoom: 16,
+    minZoom: 2,
     attribution: '&copy; Google'
 });
 // MARKER INTERACTION
@@ -30,8 +33,10 @@ $("#mapview-map").mousedown(function(ev){
     //MULTI SELECT
     if (ev.shiftKey && ev.button === 0) {  // Left-click + Shift
     isDraggingBox = true;
-    boxStart = map.mouseEventToContainerPoint(ev);
-     L.DomUtil.disableTextSelection();
+    var offset = $("#mapview-map").offset();
+    
+    boxStart = map.mouseEventToLayerPoint(ev);
+        L.DomUtil.disableTextSelection();
         console.log(map._panes.overlayPane);
     box = L.DomUtil.create('div', 'zoom-box', map._panes.overlayPane);
     box.style.position = 'absolute';
@@ -44,7 +49,10 @@ $("#mapview-map").mousedown(function(ev){
 })
 $("#mapview-map").mousemove(function(ev){
     if(!isDraggingBox) return;
-     const boxEnd = map.mouseEventToContainerPoint(ev);
+
+    var offset = $("#mapview-map").offset();
+     boxEnd = map.mouseEventToLayerPoint(ev);
+
 
   const min = boxStart;
   const max = boxEnd;
@@ -82,8 +90,18 @@ $("#mapview-map").mouseup(function(ev) {
         isDraggingBox=false;
         if(box&&box.parentNode){
             box.parentNode.removeChild(box);
-        }
+        } 
         box=null;
+
+        var offset = $("#mapview-map").offset();
+        const minx = Math.min(boxStart.x, boxEnd.x)-offset.left;
+        const miny = Math.min(boxStart.y, boxEnd.y)-offset.top;
+        const maxx = Math.max(boxStart.x, boxEnd.y)-offset.left;
+        const maxy = Math.max(boxStart.y, boxEnd.y)-offset.top;
+        const topLeft = map.project(map.containerPointToLatLng(L.point(minx, miny), map.getZoom()),1);
+
+        const botRight = map.project(map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom()),1);
+        boxSelect(topLeft.x, topLeft.y, botRight.x, botRight.y);
     }
     console.log(dragStartPos, ev.clientX, ev.clientY);
     if(dragStartPos[0]!=ev.clientX||dragStartPos[1]!=ev.clientY){
@@ -98,9 +116,9 @@ $("#mapview-map").mouseup(function(ev) {
     console.log(screencolor);
     if (compareColors(screencolor, color)) {
 
-        var latLon = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom());
-        var drop = core.closestMarker(latLon.lat, latLon.lng, Infinity);
-        console.log(drop, latLon);
+        var xy = map.project(map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()),1);
+        var drop = core.closestMarker(xy.x, xy.y, Infinity);
+        console.log(drop, xy);
         if(!ev.shiftKey){
         selectedMarkers = [];
         }
@@ -119,6 +137,17 @@ $("#mapview-map").mouseup(function(ev) {
 
 
 // utils
+function boxSelect(x1, y1, x2, y2){
+    const idBuffer = core.createUintBuffer(drops.length);
+    const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
+    const dropIds = Module.HEAPU32.slice(idBuffer/Uint32Array.BYTES_PER_ELEMENT, idBuffer/Uint32Array.BYTES_PER_ELEMENT+numDrops);
+    console.log(dropIds);
+    selectedMarkers.push(...dropIds);
+    if(numDrops>0){
+        makeMarkerBuffer();
+        drawMarkers();
+    }
+}
 function compareColors(rgb1, rgb2){
     return rgb1[0]==rgb2[0]&&rgb1[1]==rgb2[1]&&rgb1[2]==rgb2[2]
 }
@@ -183,9 +212,13 @@ function makeMarkerBuffer() {
 function gridMarkers() {
     var markerIds = new Uint32Array(drops.map((drop) => drop.id));
     var markerIdBuffer = core.createUintBuffer(markerPositions.length);
+    var projectedMarkers = new Float32Array(drops.map((drop) => {var p = map.project(L.latLng(drop.lat, drop.lng), 1); return [p.x, p.y]}).flat());
+    var projectedMarkersBuffer = core.createFloatBuffer(projectedMarkers.length);
     Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
-    core.loadMarkers(markerPosBuffer, markerIdBuffer, markerPositions.length, 1.0);
+    Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer/Float32Array.BYTES_PER_ELEMENT);
+    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length, 1.0);
     core.destroyBuffer(markerIdBuffer);
+    core.destroyBuffer(projectedMarkersBuffer);
 }
 
 function _drawMarkers(buf1, l1, buf2, l2, rgb) {

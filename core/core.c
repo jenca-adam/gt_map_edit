@@ -5,8 +5,8 @@
 #include <math.h>
 #include <stdint.h>
 typedef struct marker{
-    float lat;
-    float lon;
+    float x; // MARKER POSITIONS ARE PROJECTED AT ZOOM 1
+    float y;
     unsigned int id;
 } marker;
 
@@ -22,6 +22,9 @@ typedef struct grid{
     marker_list **g;
 } grid;
 
+
+
+GLuint n_markers=0;
 GLuint program_object;
 GLuint fbo=0, fbo_tex=0;
 grid g;
@@ -73,7 +76,7 @@ void print_grid(){
         marker_list *ml = g.g[i];
         if(ml) printf("TILE %d:\n", i);
             while(ml){
-                printf("    %f %f\n", ml->m.lat, ml->m.lon);
+                printf("    %f %f\n", ml->m.x, ml->m.y);
                 ml = ml->next;
             }
 
@@ -81,30 +84,40 @@ void print_grid(){
 }
 void load_markers(float *xys, unsigned int *ids, int num, float grid_square_size){
     int square_index = 0;
-    int width=360/grid_square_size;
-    int height=180/grid_square_size;
+    int owidth, oheight;
+    emscripten_get_canvas_element_size("#overlay", &owidth, &oheight);
+    int width=owidth/grid_square_size;
+    int height=oheight/grid_square_size;
+
+
     if(g.res!=grid_square_size){
+        if(g.g){
+            free(g.g);
+        }
+
         g.width=width;
         g.height=height;
         g.g=calloc(g.width*g.height, sizeof(marker_list*));
     }
+    n_markers+=num/2;
     g.res = grid_square_size;
     for (int i=0; i<num; i+=2){
-        float lat=fmin(fmax(xys[i], -90), 90);
-        float lon=fmin(fmax(xys[i+1], -180), 180);
-        int lat_tile = (90+lat)/g.res;
-        int lon_tile = (180+lon)/g.res;
-        int grid_space = g.width*lat_tile+lon_tile;
+        float x = xys[i];
+        float y = xys[i+1];
+        int x_tile = x/g.res;
+        int y_tile = y/g.res;
+        int grid_space = g.width*y_tile+x_tile;
         marker_list *new = malloc(sizeof(marker_list));
 
-        new->m.lat = lat;
-        new->m.lon = lon;
+        new->m.x = x;
+        new->m.y = y;
         new->m.id = ids[i/2];
         new->next = g.g[grid_space];
         g.g[grid_space] = new;
     }
+    print_grid();
 }
-float distance(float lat1, float lng1, float lat2, float lng2){
+float earth_distance(float lat1, float lng1, float lat2, float lng2){
     float r = 6378137.0;
     float phi1 = lat1*M_PI/180;
     float phi2 = lat2*M_PI/180;
@@ -114,6 +127,9 @@ float distance(float lat1, float lng1, float lat2, float lng2){
     float c = 2.0 * atan2(sqrt(a), sqrt(1-a));
     return r*c;
 }
+float distance(float x1, float y1, float x2, float y2){
+    return sqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+}
 unsigned int is_on_marker(int x, int y){
     GLubyte col[4];
     glFlush();
@@ -122,18 +138,20 @@ unsigned int is_on_marker(int x, int y){
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return *(unsigned int*)col;
 }
-unsigned int closest_marker(float lat, float lon,  float mindist){
-    int center_lat = (90+lat)/g.res;
-    int center_lon = (180+lon)/g.res;
+unsigned int closest_marker(float x, float y,  float mindist){
+    int center_x = x/g.res;
+    int center_y = y/g.res;
     float closest_distance = mindist;
     int closest_id = 0;
     marker *closest_marker =NULL;
-    printf("TILE %d\n",g.width*center_lat+center_lon);
-    for (int la = center_lat-1; la<=center_lat+1; la++){
-        for (int lo = center_lon-1; lo<=center_lon+1; lo++){
-            marker_list *ml = g.g[g.width*la+lo];
+    printf("%f %f TILE %d\n", x, y, g.width*center_y+center_x);
+    for (int lx = center_x-1; lx<=center_x+1; lx++){
+        for (int ly = center_y-1; ly<=center_y+1; ly++){
+            if(lx<0||lx>g.width||ly<0||ly>g.height)
+                continue;
+            marker_list *ml = g.g[g.width*ly+lx];
             while(ml){
-                float d = distance(ml->m.lat, ml->m.lon, lat, lon);
+                float d = distance(ml->m.x, ml->m.y, x, y);
                 if(d<=closest_distance){
                     closest_distance = d;
                     closest_id = ml->m.id;
@@ -143,10 +161,33 @@ unsigned int closest_marker(float lat, float lon,  float mindist){
             }
         }
     }
-    if(closest_marker){
-        printf("%f %f", closest_marker->lat, closest_marker->lon);
-    }
     return closest_id;
+}
+unsigned int box_select(float x1, float y1, float x2, float y2, unsigned int *id_buffer){
+    // id_buffer MUST BE AT LEAST n_markers LONG !!
+    int buffer_index=0;
+    int tile_x1=x1/g.res;
+    int tile_y1=y1/g.res;
+    int tile_x2=ceil((float)x2/(float)g.res);
+    int tile_y2=ceil((float)y2/(float)g.res);
+    for (int lx = tile_x1; lx<=tile_x2; lx++){
+        for (int ly = tile_y1; ly<=tile_y2; ly++){
+            if(lx<0||lx>g.width||ly<0||ly>g.height) continue;
+            
+            marker_list *ml = g.g[g.width*ly+lx];
+            while(ml){
+                marker m=ml->m;
+                printf("%f %f (%f %f %f %f)\n", m.x, m.y, x1, y1, x2, y2);
+                if(m.x>x1&&m.x<x2&&m.y>y1&&m.y<y2){
+                    id_buffer[buffer_index]=m.id;
+                    buffer_index++;
+                }
+                ml=ml->next;
+            }
+        }
+    }
+    return buffer_index;
+    
 }
 void stretch(){
     int width, height;
