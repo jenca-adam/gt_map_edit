@@ -1,5 +1,7 @@
 const map = L.map('mapview-map', {
-    boxZoom: false
+    boxZoom: false,
+    maxBounds: [[-90, -Infinity],[90,Infinity]],
+    maxBoundsViscosity: 1.0
 }).setView([0, 0], 2);
 const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
 const overlay = $("#overlay")[0];
@@ -7,11 +9,10 @@ var drops;
 var bbox;
 var markerPositions;
 var markerPosBuffer = 0;
-var selectedMarkers = [];
+var selectedMarkers = new Set();
 var selMarkerPositions;
 var selMarkerPosBuffer = 0;
 var dropsById = {};
-var activeId = 0;
 var dragStartPos;
 var isDraggingBox = false;
 var box;
@@ -31,11 +32,18 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     attribution: '&copy; Google'
 });
 // MARKER INTERACTION
+function cancelBoxDrag(){
+ isDraggingBox = false;
+        if (box && box.parentNode) {
+            box.parentNode.removeChild(box);
+        }
+        box = null;
 
+}
 $("#mapview-map").mousedown(function(ev) {
     dragStartPos = [ev.clientX, ev.clientY];
     //MULTI SELECT
-    if (ev.shiftKey && ev.button === 0) { // Left-click + Shift
+    if (ev.shiftKey && ev.button === 0) { // Left-click + Ctrl
         isDraggingBox = true;
         var offset = $("#mapview-map").offset();
 
@@ -53,7 +61,12 @@ $("#mapview-map").mousedown(function(ev) {
 })
 $("#mapview-map").mousemove(function(ev) {
     if (!isDraggingBox) return;
-
+    if (!ev.shiftKey) {
+        cancelBoxDrag();
+        boxStart=null;
+        boxEnd=null;
+        return;
+    }
     var offset = $("#mapview-map").offset();
     boxEnd = map.mouseEventToLayerPoint(ev);
 
@@ -72,16 +85,18 @@ $("#mapview-map").mousemove(function(ev) {
     box.style.height = `${height}px`;
 });
 $("#mapview-map").mousemove(function(ev) {
-    if (!drops) return;
+    if (!drops||!core._INITTED) return;
 
     var color = hexToRgb($("#marker-color").val(), 1);
+
+    var invcolor = [255-color[0], 255-color[1], 255-color[2]];
     var offset = $("#mapview-map").offset();
     var x = ev.clientX - offset.left;
     var y = ev.clientY - offset.top;
-
     var s = (core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0);
-    var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
-    if (compareColors(screencolor, color)) {
+    var screencolor = [(s& 255), ((s >> 8) & 255), ((s >> 16) & 255)]; 
+    if (compareColors(screencolor, color)||compareColors(screencolor, invcolor)) {
+        console.log(x, $("#mapview-map").height() - y)
         $("#mapview-map").css({
             "cursor": "pointer"
         });
@@ -92,14 +107,11 @@ $("#mapview-map").mousemove(function(ev) {
     }
 });
 $("#mapview-map").mouseup(function(ev) {
+    if(ev.button!=0) return;
     map.dragging.enable();
     if (isDraggingBox) {
-        isDraggingBox = false;
-        if (box && box.parentNode) {
-            box.parentNode.removeChild(box);
-        }
-        box = null;
-
+        cancelBoxDrag();
+        if(boxEnd){
         var offset = $("#mapview-map").offset();
         const minx = Math.min(boxStart.x, boxEnd.x);
         const miny = Math.min(boxStart.y, boxEnd.y) ;
@@ -111,6 +123,9 @@ $("#mapview-map").mouseup(function(ev) {
         const topLeftProjected = projectSingle(topLeft.lat, topLeft.lng, 1);
         const botRightProjected = projectSingle(botRight.lat, botRight.lng, 1);
         boxSelect(topLeftProjected[0], topLeftProjected[1], botRightProjected[0], botRightProjected[1]);
+        boxStart=null;
+        boxEnd=null;
+        }
     }
     console.log(dragStartPos, ev.clientX, ev.clientY);
     if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
@@ -120,8 +135,9 @@ $("#mapview-map").mouseup(function(ev) {
     var x = ev.clientX - offset.left;
     var y = ev.clientY - offset.top;
     var color = hexToRgb($("#marker-color").val(), 1);
+    var invcolor = [255-color[0], 255-color[1], 255-color[2]];
     var s = core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0;
-    var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
+    var screencolor = [(s& 255), ((s >> 8) & 255), ((s >> 16) & 255)]; 
     console.log(screencolor);
 
 var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
@@ -129,7 +145,7 @@ var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY -
         var xy =projectSingle(ll.lat, ll.lng,1);
         console.log("M", ll.lat, ll.lng ,xy);
 
-    if (compareColors(screencolor, color)) {
+    if (compareColors(screencolor, color)||compareColors(screencolor, invcolor)) {
         var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
          
         var xy =projectSingle(ll.lat, ll.lng,1);
@@ -137,15 +153,18 @@ var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY -
         var drop = core.closestMarker(xy[0], xy[1], Infinity);
         console.log(drop, xy);
         if (!ev.shiftKey) {
-            selectedMarkers = [];
+            selectedMarkers.clear();
         }
-        selectedMarkers.push(drop);
-        if (drop) console.log(dropsById[drop]);
-        activeId = drop;
+        if (selectedMarkers.has(drop)) {
+            selectedMarkers.delete(drop);
+        }
+        else{
+            selectedMarkers.add(drop);
+        }
         makeMarkerBuffer();
         drawMarkers();
     } else if (selectedMarkers && !ev.shiftKey) {
-        selectedMarkers = [];
+        selectedMarkers.clear();
         makeMarkerBuffer();
         drawMarkers();
     }
@@ -159,8 +178,9 @@ function boxSelect(x1, y1, x2, y2) {
     const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
     const dropIds = Module.HEAPU32.slice(idBuffer / Uint32Array.BYTES_PER_ELEMENT, idBuffer / Uint32Array.BYTES_PER_ELEMENT + numDrops);
     console.log(dropIds);
-    selectedMarkers.push(...dropIds);
+    dropIds.forEach((d)=>{selectedMarkers.add(d)});
     if (numDrops > 0) {
+
         makeMarkerBuffer();
         drawMarkers();
     }
@@ -202,7 +222,7 @@ function makeMarkerBuffer() {
     // called every time markers update and when they load for the first time
     markerPositions = new Float32Array(
         drops.filter(
-            (drop) => !selectedMarkers.includes(drop.id)
+            (drop) => !selectedMarkers.has(drop.id)
         ).map(
             (drop) => [drop.lat, drop.lng]
         ).flat()
@@ -214,7 +234,7 @@ function makeMarkerBuffer() {
     Module.HEAPF32.set(markerPositions, markerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
     if (selectedMarkers) {
         selMarkerPositions = new Float32Array(
-            selectedMarkers.map(
+            selectedMarkers.values().toArray().map(
                 (dropId) => {
                     var drop = dropsById[dropId];
                     return [drop.lat, drop.lng]
@@ -279,22 +299,10 @@ function drawMarkers() {
         return [(pt.x - overlay.offsetWidth / 2) / overlay.offsetWidth * 2, -(pt.y - overlay.offsetHeight / 2) / overlay.offsetHeight * 2]
     }).filter((loc) => loc[0] < 1 && loc[0] > -1 && loc[1] < 1 && loc[1] > -1).flat());*/
     var rgb = hexToRgb($("#marker-color").val());
-    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.length * 2, rgb);
+    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.size* 2, rgb);
 }
 
-function highlightActiveMarker() {
-    if (activeId) {
-        var drop = dropsById[activeId];
 
-        var rgb = hexToRgb($("#marker-color").val());
-        var singleMarkerPosition = new Float32Array([drop.lat, drop.lng]);
-        var singlePositionBuffer = core.createFloatBuffer(2);
-        Module.HEAPF32.set(singleMarkerPosition, singlePositionBuffer / Float32Array.BYTES_PER_ELEMENT);
-        _drawMarkers(singlePositionBuffer, 2, [0, 1, 0]);
-
-    }
-
-};
 
 function zoomToMarkers() {
     map.fitBounds(bbox);
@@ -309,6 +317,32 @@ function mapChanged() {
     if (drops) {
         drawMarkers()
     }
+}
+function fboCap(){
+    const buf = core.fboCap();
+    const width =Math.floor($("#mapview-map").width());
+    const height=Math.floor($("#mapview-map").height());
+    const pixels=Module.HEAPU8.slice(buf, buf+width*height*4); 
+     const flipped = new Uint8Array(width * height * 4);
+   for (let row = 0; row < height; ++row) {
+    const src = row * width * 4;
+    const dst = (height - row - 1) * width * 4;
+    flipped.set(pixels.subarray(src, src + width * 4), dst);
+  }
+      const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(width, height);
+   console.log(pixels, imageData.data); 
+  imageData.data.set(flipped);
+  ctx.putImageData(imageData, 0, 0);
+  canvas.toBlob(function(blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'fbo_output.png';
+    a.click();
+  });
 }
 map.on("move", mapChanged)
 
