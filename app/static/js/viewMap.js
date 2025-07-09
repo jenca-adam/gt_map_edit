@@ -240,7 +240,7 @@ function gridMarkers() {
     var markerIdBuffer = core.createUintBuffer(markerPositions.length);
      Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
     Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer / Float32Array.BYTES_PER_ELEMENT);
-    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length,1.0);
+    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length,0.01);
     core.destroyBuffer(markerIdBuffer);
     core.destroyBuffer(projectedMarkersBuffer);
 }
