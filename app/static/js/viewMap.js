@@ -101,13 +101,13 @@ $("#mapview-map").mouseup(function(ev) {
         box = null;
 
         var offset = $("#mapview-map").offset();
-        const minx = Math.min(boxStart.x, boxEnd.x) - offset.left;
-        const miny = Math.min(boxStart.y, boxEnd.y) - offset.top;
-        const maxx = Math.max(boxStart.x, boxEnd.x) - offset.left;
-        const maxy = Math.max(boxStart.y, boxEnd.y) - offset.top;
-        const topLeft = map.containerPointToLatLng(L.point(minx, miny), map.getZoom());
+        const minx = Math.min(boxStart.x, boxEnd.x);
+        const miny = Math.min(boxStart.y, boxEnd.y) ;
+        const maxx = Math.max(boxStart.x, boxEnd.x) ;
+        const maxy = Math.max(boxStart.y, boxEnd.y);
+        const topLeft = map.layerPointToLatLng(L.point(minx, miny), map.getZoom());
 
-        const botRight = map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom());
+        const botRight = map.layerPointToLatLng(L.point(maxx, maxy), map.getZoom());
         const topLeftProjected = projectSingle(topLeft.lat, topLeft.lng, 1);
         const botRightProjected = projectSingle(botRight.lat, botRight.lng, 1);
         boxSelect(topLeftProjected[0], topLeftProjected[1], botRightProjected[0], botRightProjected[1]);
@@ -123,9 +123,15 @@ $("#mapview-map").mouseup(function(ev) {
     var s = core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0;
     var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
     console.log(screencolor);
+
+var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
+         
+        var xy =projectSingle(ll.lat, ll.lng,1);
+        console.log("M", ll.lat, ll.lng ,xy);
+
     if (compareColors(screencolor, color)) {
         var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
-        
+         
         var xy =projectSingle(ll.lat, ll.lng,1);
         console.log("M", ll.lat, ll.lng ,xy);
         var drop = core.closestMarker(xy[0], xy[1], Infinity);
@@ -234,7 +240,7 @@ function gridMarkers() {
     var markerIdBuffer = core.createUintBuffer(markerPositions.length);
      Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
     Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer / Float32Array.BYTES_PER_ELEMENT);
-    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length,0.01);
+    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length,1.0);
     core.destroyBuffer(markerIdBuffer);
     core.destroyBuffer(projectedMarkersBuffer);
 }

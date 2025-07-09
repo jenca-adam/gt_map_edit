@@ -221,6 +221,7 @@ unsigned int box_select(float x1, float y1, float x2, float y2, unsigned int *id
                 marker m=ml->m;
                 printf("%f %f (%f %f %f %f)\n", m.x, m.y, x1, y1, x2, y2);
                 if(m.x>x1&&m.x<x2&&m.y>y1&&m.y<y2){
+                    printf("SELECTED\n");
                     id_buffer[buffer_index]=m.id;
                     buffer_index++;
                 }
