@@ -23,5 +23,6 @@ const core = {
     loadMarkers: Module.cwrap("load_markers", "", ["number", "number", "number", "float"]),
     closestMarker: Module.cwrap("closest_marker", "number", ["float", "float", "float"]),
     isOnMarker: Module.cwrap("is_on_marker", "number", ["number", "number"]),
-    boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"])
+    boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"]),
+    multiProject: Module.cwrap("multi_project", "", ["number" ,"number", "float", "float", "float", "float", "float", "number"]),
 };

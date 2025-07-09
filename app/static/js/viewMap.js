@@ -17,6 +17,8 @@ var isDraggingBox = false;
 var box;
 var boxStart;
 var boxEnd;
+var projectedMarkersBuffer = 0;
+var projectedMarkers;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 16,
     minZoom: 2,
@@ -103,10 +105,12 @@ $("#mapview-map").mouseup(function(ev) {
         const miny = Math.min(boxStart.y, boxEnd.y) - offset.top;
         const maxx = Math.max(boxStart.x, boxEnd.x) - offset.left;
         const maxy = Math.max(boxStart.y, boxEnd.y) - offset.top;
-        const topLeft = map.project(map.containerPointToLatLng(L.point(minx, miny), map.getZoom()), 1);
+        const topLeft = map.containerPointToLatLng(L.point(minx, miny), map.getZoom());
 
-        const botRight = map.project(map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom()), 1);
-        boxSelect(topLeft.x, topLeft.y, botRight.x, botRight.y);
+        const botRight = map.containerPointToLatLng(L.point(maxx, maxy), map.getZoom());
+        const topLeftProjected = projectSingle(topLeft.lat, topLeft.lng, 1);
+        const botRightProjected = projectSingle(botRight.lat, botRight.lng, 1);
+        boxSelect(topLeftProjected[0], topLeftProjected[1], botRightProjected[0], botRightProjected[1]);
     }
     console.log(dragStartPos, ev.clientX, ev.clientY);
     if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
@@ -120,9 +124,11 @@ $("#mapview-map").mouseup(function(ev) {
     var screencolor = [((s >> 24) & 255), ((s >> 16) & 255), ((s >> 8) & 255)];
     console.log(screencolor);
     if (compareColors(screencolor, color)) {
-
-        var xy = map.project(map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom()), 1);
-        var drop = core.closestMarker(xy.x, xy.y, Infinity);
+        var ll=map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
+        
+        var xy =projectSingle(ll.lat, ll.lng,1);
+        console.log("M", ll.lat, ll.lng ,xy);
+        var drop = core.closestMarker(xy[0], xy[1], Infinity);
         console.log(drop, xy);
         if (!ev.shiftKey) {
             selectedMarkers = [];
@@ -142,6 +148,7 @@ $("#mapview-map").mouseup(function(ev) {
 
 // utils
 function boxSelect(x1, y1, x2, y2) {
+    console.log(x1,y1,x2,y2);
     const idBuffer = core.createUintBuffer(drops.length);
     const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
     const dropIds = Module.HEAPU32.slice(idBuffer / Uint32Array.BYTES_PER_ELEMENT, idBuffer / Uint32Array.BYTES_PER_ELEMENT + numDrops);
@@ -217,23 +224,37 @@ function makeMarkerBuffer() {
     } else if (selMarkerPosBuffer) {
         core.destroyBuffer(selMarkerPosBuffer);
     }
+    var projectResult = projectMarkers(markerPosBuffer, markerPositions.length, 1.0);
+    projectedMarkersBuffer = projectResult[0];
+    projectedMarkers = projectResult[1];
 }
 
 function gridMarkers() {
     var markerIds = new Uint32Array(drops.map((drop) => drop.id));
     var markerIdBuffer = core.createUintBuffer(markerPositions.length);
-    var projectedMarkers = new Float32Array(drops.map((drop) => {
-        var p = map.project(L.latLng(drop.lat, drop.lng), 1);
-        return [p.x, p.y]
-    }).flat());
-    var projectedMarkersBuffer = core.createFloatBuffer(projectedMarkers.length);
-    Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
+     Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
     Module.HEAPF32.set(projectedMarkers, projectedMarkersBuffer / Float32Array.BYTES_PER_ELEMENT);
-    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length, 1.0);
+    core.loadMarkers(projectedMarkersBuffer, markerIdBuffer, markerPositions.length,0.01);
     core.destroyBuffer(markerIdBuffer);
     core.destroyBuffer(projectedMarkersBuffer);
 }
 
+function projectMarkers(markerBuffer, l, scale){
+    const buf = core.createFloatBuffer(l);
+    const transform = map.options.crs.transformation
+    core.multiProject(markerBuffer, l, scale, transform._a, transform._b, transform._c, transform._d,buf)
+    var m= Module.HEAPF32.slice(buf/Float32Array.BYTES_PER_ELEMENT, buf/Float32Array.BYTES_PER_ELEMENT+l);
+    return [buf,m];
+}
+
+function projectSingle(lat, lon, scale){
+    const buf = core.createFloatBuffer(2);
+    Module.HEAPF32.set([lat,lon], buf/Float32Array.BYTES_PER_ELEMENT);
+    const projected= projectMarkers(buf, 2, scale);
+    core.destroyBuffer(buf);
+    core.destroyBuffer(projected[0]);
+    return projected[1];
+}
 function _drawMarkers(buf1, l1, buf2, l2, rgb) {
     var transform = map.options.crs.transformation;
     var origin = map.getPixelOrigin();

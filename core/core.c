@@ -22,6 +22,22 @@ typedef struct grid{
     marker_list **g;
 } grid;
 
+typedef struct {
+    double x;
+    double y;
+} vec2;
+
+typedef struct {
+    double x;
+    double y;
+    double z;
+    double w;
+} vec4;
+
+#define DEG2RAD (0.017453292519943295)
+#define EARTH_RADIUS 6378137.0
+
+
 
 
 GLuint n_markers=0;
@@ -71,6 +87,31 @@ GLuint LoadShader ( GLenum type, const char *shaderSrc )
    return shader;
 
 }
+vec2 project(double la, double lo) {
+    // Clamp latitude to Mercator projection limits
+    double lat = fmax(fmin(85.0511287798, la), -85.0511287798);
+    double s = sin(lat * DEG2RAD);
+    double x = EARTH_RADIUS * lo * DEG2RAD;
+    double y = EARTH_RADIUS * log((1.0 + s) / (1.0 - s)) / 2.0;
+    return (vec2){x, y};
+}
+
+vec2 affine_transform(double tx, double ty, double tz, double tw, vec2 p, double scale) {
+    double x = scale * (tx * p.x + ty);
+    double y = scale * (tz * p.y + tw);
+    return (vec2){x, y};
+}
+
+void multi_project(float *xys, int num, double scale, double tx, double ty, double tz, double tw, float *newbuf){
+    for (int i=0; i<num; i+=2){
+        float lat = xys[i];
+        float lon = xys[i+1];
+        vec2 projected = project(lat, lon);
+        vec2 transformed=affine_transform(tx,ty,tz,tw,projected,scale);
+        newbuf[i]=transformed.x;
+        newbuf[i+1]=transformed.y;
+    }
+}
 void print_grid(){
     for (int i=0; i<g.height*g.width; i++){
         marker_list *ml = g.g[i];
@@ -84,10 +125,9 @@ void print_grid(){
 }
 void load_markers(float *xys, unsigned int *ids, int num, float grid_square_size){
     int square_index = 0;
-    int owidth, oheight;
-    emscripten_get_canvas_element_size("#overlay", &owidth, &oheight);
-    int width=owidth/grid_square_size;
-    int height=oheight/grid_square_size;
+   
+    int width=1.0/grid_square_size;
+    int height=1.0/grid_square_size;
 
 
     if(g.res!=grid_square_size){
@@ -171,10 +211,11 @@ unsigned int box_select(float x1, float y1, float x2, float y2, unsigned int *id
     int tile_y1=y1/g.res;
     int tile_x2=x2/g.res;
     int tile_y2=y2/g.res;
+
     for (int lx = tile_x1; lx<=tile_x2; lx++){
         for (int ly = tile_y1; ly<=tile_y2; ly++){
             if(lx<0||lx>g.width||ly<0||ly>g.height) continue;
-            
+            printf("TILE %d\n", g.width*ly+lx);
             marker_list *ml = g.g[g.width*ly+lx];
             while(ml){
                 marker m=ml->m;
