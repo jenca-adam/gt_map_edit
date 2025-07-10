@@ -265,3 +265,6 @@ html, body{
     font-size:15pt;
     font-weight:bold;
 }
+#mapview-ui *{
+    margin:0em 0.1em;
+}

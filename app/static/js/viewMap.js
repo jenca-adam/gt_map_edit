@@ -347,6 +347,17 @@ function fboCap(){
     a.click();
   });
 }
+function getSelectedMarkersJson(){
+    var arr = selectedMarkers.values().map(val=>dropsById[val]).toArray();
+    var blob = new Blob([JSON.stringify(arr)]);
+      const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'drops.json';
+    a.click();
+
+}
+
+$("#export-selected").click(getSelectedMarkersJson);
 map.on("move", mapChanged)
 
 map.on("zoomstart", function() {
