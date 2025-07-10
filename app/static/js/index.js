@@ -1,8 +1,11 @@
 const mapTemplate = document.querySelector("#map-template");
 const ownMapList = $(".own>.map-list");
 const otherMapList = $(".other>.map-list");
+const mapThreshold = 250;
 var otherLoaded = false;
 var otherMaps;
+var mapElements = {};
+
 const showOwnMaps = () => {
     $(".tab.own .loading").show();
     getOwnMaps(localStorage.token).then((response) => {
@@ -27,7 +30,7 @@ const showOwnMaps = () => {
                     location.href = ("/view/map/" + $(this).data("id"))
                 });
                 $(".tab.own .maps-search-input").keyup();
-                ownMapList.append(clone);
+                ownMapList.append($(clone));
             }
             $(".tab.own .loading").hide();
             ownMapList.show();
@@ -37,17 +40,23 @@ const showOwnMaps = () => {
     });
 }
 $(".maps-search-input").keyup(function() {
+    if(!otherMaps) return;
     var value = $(this).val().toLowerCase();
     console.log(value);
-    $(this).parent().parent().find(".map-list").children().each(function() {
-        if ($(this).data("name").includes(value)) {
-            $(this).show()
-        } else {
-            $(this).hide()
-        }
-    })
-});
+    otherMapList.empty();
+    var count = 0;
 
+    for (map of otherMaps){
+        if(count>=mapThreshold) break;
+        
+        if(map.name.toLowerCase().includes(value)){
+            console.log(map);
+            otherMapList.append(mapElements[map.id]);
+            count+=1
+        }
+        
+    }
+});
 const showOtherMaps = () => {
     $(".tab.other .loading").show();
     $(".tab.other .maps-search").hide();
@@ -59,6 +68,7 @@ const showOtherMaps = () => {
         } else {
             otherMapList.hide();
             otherMaps = response.response;
+            var count=0;
             for (map of response.response) {
                 const clone = mapTemplate.content.cloneNode(true);
                 $(clone).find(".map-title").text(map.name);
@@ -69,13 +79,12 @@ const showOtherMaps = () => {
                     $(clone).find(".map-image").attr("src", "https://static.infra.geotastic.net/map_images/" + map.thumbnail);
                 }
                 $(clone).find(".map-num-plays").text(map.timesPlayed);
-                $(clone).find(".map-select").data("id", map.id);
+                $(clone).find(".map-select").attr("data-id", map.id);
                 $(clone).find(".map").data("name", map.name.toLowerCase())
                 $(clone).find(".map-select").text("View");
-                $(clone).find(".map-select").click(function() {
-                    location.href = ("/view/map/" + $(this).data("id"))
-                });
-                otherMapList.append(clone);
+                mapElements[map.id]=$('<div>').append(clone).html();
+                count+=1;
+
             }
             $(".tab.other .loading").hide();
             $(".tab.other .maps-search").show(100);
@@ -110,3 +119,4 @@ $(document).ready(() => {
         });
     }
 });
+$(document).on("click", ".map-select", function(){location.href = ("/view/map/" + $(this).data("id"))});

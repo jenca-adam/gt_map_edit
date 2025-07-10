@@ -306,3 +306,6 @@ html, body{
     clip-path:circle(0.5em at center);
     margin-right:0.2em;
 }
+.map-title{
+    padding:0.1em;
+}
