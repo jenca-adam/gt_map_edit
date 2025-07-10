@@ -63,3 +63,10 @@ const getGroupDrops = async (token, groupId) => {
         }
     });
 }
+
+const getPlayableMap = async (token, mapId) => {
+    return await apiRequest("/v1/maps/getPlayableMap.php", "GET", {
+        "token": token,
+        "params": {"id":mapId},
+    });
+}

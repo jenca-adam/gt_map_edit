@@ -1,0 +1,1 @@
+function hideLoading(){$("#loading").hide()}

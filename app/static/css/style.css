@@ -7,6 +7,9 @@ html, body{
     height:100%;
     overflow:hidden;
 }
+*:focus{
+    outline:none;
+}
 .tablist{
     width:100%;
     display:flex;
@@ -44,6 +47,7 @@ html, body{
   padding: 0.1em 0;
   display: flex;
   width:100%;
+  height:90px;
 }
 .center{
     display:flex;
@@ -61,6 +65,7 @@ html, body{
     display:flex;
     flex-direction:column;
     height:100vh;
+
 }
 #site{
     flex:1;
@@ -188,4 +193,43 @@ html, body{
     display:flex;
     padding:2em;
     z-index:3;
+}
+#mapview{
+    display:flex;
+    flex:1;
+    position:relative;
+}
+.panel-container{
+    display:flex;
+    flex-direction:row;
+    flex:1;
+}
+.select-panel{
+    flex:0.2;
+}
+.panel-title{
+    justify-content:center;
+    display:flex;
+}
+#map-title{
+    font-weight: 400;
+    text-align:center;
+    text-transform:uppercase;
+}
+#loading{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+    position:absolute;
+    top:90px;
+    left:0;
+    right:0;
+    bottom:0;
+
+    background:#333;
+
+}
+#loading-image{
+    transform:scale(0.2);
 }

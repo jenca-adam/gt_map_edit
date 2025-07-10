@@ -1,23 +1,28 @@
 {%extends 'base.html'%}
 {%block title%}Viewing Map{%endblock%}
-{%block head%} 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
+{%block head%}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {%endblock%}
 {%block body%}
 <div id="site" class="nopad">
-<canvas id="overlay"></canvas>
-<div id="mapview-map">
-</div>
-<div id="mapview-ui">
-    <input type="checkbox" id="show-coverage" checked></input>
-    <input type="color" id="marker-color" value="#ff0000"></input>
-    <button class="button" id="reset-map">Reset Map</button>
-</div>
+    <div class="panel-container">
+        <div class="panel select-panel sp-drops">
+            <div class="panel-title">
+                <h1 id="map-title"></h1>
+            </div>
+        </div>
+        <div id="mapview" class="panel">
+            <canvas id="overlay"></canvas>
+            <div id="mapview-map">
+            </div>
+            <div id="mapview-ui">
+                <input type="checkbox" id="show-coverage" checked></input>
+                <input type="color" id="marker-color" value="#ff0000"></input>
+                <button class="button" id="reset-map">Reset Map</button>
+            </div>
+        </div>
+    </div>
 </div>
 {%endblock%}
 {%block scripts%}

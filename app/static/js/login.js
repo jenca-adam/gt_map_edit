@@ -21,6 +21,8 @@ const logInToken = async (token) => {
     return response.response.token;
 };
 $(document).ready(() => {
+
+    $("#loading").hide();
     if ($("#lms-token").prop("checked")) {
         $("#form-mail-password").hide();
     } else {

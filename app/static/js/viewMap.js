@@ -20,6 +20,7 @@ var boxStart;
 var boxEnd;
 var projectedMarkersBuffer = 0;
 var projectedMarkers;
+var mapData;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     minZoom: 1,
@@ -38,6 +39,8 @@ function cancelBoxDrag(){
             box.parentNode.removeChild(box);
         }
         box = null;
+
+        L.DomUtil.enableTextSelection();
 
 }
 $("#mapview-map").mousedown(function(ev) {
@@ -383,6 +386,16 @@ $(document).ready(function() {
         coverageLayer.addTo(map);
     }
     stretchOverlay();
+    getPlayableMap(localStorage.token, mapId).then((response)=>{
+        console.log(response);
+        if(response.status!="ok"){
+            console.error(response.message);
+        }
+        else{
+            mapData=response.response;
+            $("#map-title").text(response.response.name);
+        }
+    });
     getMapDrops(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
             console.error(response.message);
@@ -395,6 +408,8 @@ $(document).ready(function() {
             }
             core.waitInitted().then(() => {
                 makeMarkerBuffer();
+
+                $("#loading").hide();
                 for (var drop of drops) {
                     dropsById[drop.id] = drop;
                 }
