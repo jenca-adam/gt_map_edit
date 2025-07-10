@@ -1,3 +1,6 @@
+Module.onAbort = (msg) => {
+    showError("FATAL EMSCRIPTEN ERROR:<br>"+msg+"<br>Please create a bug report.", function(){location.reload()});
+}
 Module.onRuntimeInitialized = () => {
     if (core.init() == -1) {
         alert("fail");

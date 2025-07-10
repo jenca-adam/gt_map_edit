@@ -4,6 +4,6 @@ function hideError(){
 }
 function showError(message, onOk){
     $("#error-box-button").unbind("click").click(function(){hideError();onOk()});
-    $("#error-box-content").text(message);
+    $("#error-box-content").html(message);
     $("#error-box-container").show();
 }
