@@ -24,7 +24,7 @@ const showOwnMaps = () => {
                 $(clone).find(".map-select").data("id", map.id);
                 $(clone).find(".map-select").text("Edit");
                 $(clone).find(".map-select").click(function() {
-                    location.href = ("/view-map/" + $(this).data("id"))
+                    location.href = ("/view/map/" + $(this).data("id"))
                 });
                 $(".tab.own .maps-search-input").keyup();
                 ownMapList.append(clone);
@@ -73,7 +73,7 @@ const showOtherMaps = () => {
                 $(clone).find(".map").data("name", map.name.toLowerCase())
                 $(clone).find(".map-select").text("View");
                 $(clone).find(".map-select").click(function() {
-                    location.href = ("/view-map/" + $(this).data("id"))
+                    location.href = ("/view/map/" + $(this).data("id"))
                 });
                 otherMapList.append(clone);
             }

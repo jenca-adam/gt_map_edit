@@ -5,11 +5,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {%endblock%}
 {%block body%}
+<template id="dli-template">
+    <div class="dl-item">
+        <div class="drop-group"><img class="flag-small drop-group-image"><span class="drop-group-name"></span></div>
+    <div class="drop-count-outer"><span class="drop-count"></span>&nbsp;drops</div>
+    </div>
+</template>
 <div id="site" class="nopad">
     <div class="panel-container">
         <div class="panel select-panel sp-drops">
             <div class="panel-title">
                 <h1 id="map-title"></h1>
+            </div>
+            <div class="panel-content" id="drop-list">
             </div>
         </div>
         <div id="mapview" class="panel">

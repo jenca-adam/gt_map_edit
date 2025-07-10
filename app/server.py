@@ -34,8 +34,8 @@ def gt_proxy(url):
     except GeotasticAPIError as e:
         return {"status":"error", "message":str(e), "response":None}
     return {"status":"ok", "message":"", "response":response}
-@app.route("/view-map/<string:id>") 
-def view_map(id):
+@app.route("/view/<string:w>/<path:id>") 
+def view_map(w,id):
     return render_template("view_map.html")
 if __name__=="__main__":
     app.run(port=5000, debug=True)

@@ -3,7 +3,12 @@ const map = L.map('mapview-map', {
     maxBounds: [[-90, -Infinity],[90,Infinity]],
     maxBoundsViscosity: 1.0
 }).setView([0, 0], 1);
-const mapId = Number(new URL(document.location).pathname.split("/").at(-1));
+const url = new URL(document.location);
+const urlComponents = url.pathname.split("/");
+const mapId = Number(urlComponents[3]);
+var groupId;
+const dgOrMap = urlComponents[2];
+const dTemplate = document.querySelector("#dli-template");
 const overlay = $("#overlay")[0];
 var drops;
 var bbox;
@@ -14,6 +19,7 @@ var selMarkerPositions;
 var selMarkerPosBuffer = 0;
 var dropsById = {};
 var dragStartPos;
+var dropGroups;
 var isDraggingBox = false;
 var box;
 var boxStart;
@@ -389,29 +395,9 @@ $("#show-coverage").change(function() {
         coverageLayer.removeFrom(map);
     }
 });
-$(document).ready(function() {
-    if (!localStorage.token) {
-        logOut();
-    }
-    if ($("#show-coverage").is(":checked")) {
-        coverageLayer.addTo(map);
-    }
-    stretchOverlay();
-    getPlayableMap(localStorage.token, mapId).then((response)=>{
-        console.log(response);
-        if(response.status!="ok"){
-            showError("Error while loading map data: "+response.message, function(){location.href="/"});
-        }
-        else{
-            mapData=response.response;
-            $("#map-title").text(response.response.name);
-    getMapDrops(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
-            showError("Error while loading map drops: "+response.message, function(){location.href="/"});
-        } else {
-            console.log(response.response);
-            drops = response.response;
-            bbox = getBbox(drops);
+function loadDrops(d){
+    drops=d;
+    bbox = getBbox(drops);
             if (bbox&&drops.length) {
                 map.fitBounds(bbox);
             }
@@ -425,9 +411,85 @@ $(document).ready(function() {
                 gridMarkers();
                 drawMarkers();
             });
+
+
+}
+function loadDropGroups(g){
+    dropGroups=g;
+    for(var dg of dropGroups){
+        const clone = dTemplate.content.cloneNode(true);
+        $(clone).find(".drop-group-image").attr("src", "/static/images/flags/svg/"+dg.code+".svg");
+        $(clone).find(".drop-group-name").text(dg.publicName);
+        $(clone).find(".drop-count").text(dg.numberOfDrops);
+        $(clone).find(".dl-item").data("id", dg.id);
+        $(clone).find(".drop-group").click(function(){location.href="/view/group/"+mapId+"/"+$(this).parent().data("id")});
+        $("#drop-list").append(clone);
+    }
+}
+function loadSingleMap(){
+     getMapDrops(localStorage.token, mapId).then((response) => {
+        if (response.status != "ok") {
+            showError("Error while loading map drops: "+response.message, function(){location.href="/"});
+        } else {
+            loadDrops(response.response);
+                    }
+    });
+}
+function loadGroupedMap(){
+    getPublicDropGroups(localStorage.token, mapId).then((response)=>{
+        if(response.status!="ok"){
+            showError("Error while loading drop groups: "+response.message, function(){location.href="/"});
+        }
+        else{
+            loadDropGroups(response.response);
+            $("#loading").hide();
         }
     });
+}
+function loadMap(){
+getPlayableMap(localStorage.token, mapId).then((response)=>{
+        console.log(response);
+        if(response.status!="ok"){
+            showError("Error while loading map data: "+response.message, function(){location.href="/"});
+        }
+        else{
+            mapData=response.response;
+            $("#map-title").text(response.response.name);
+            if(mapData.dropType=="single"){
+                loadSingleMap();
+            }
+            else if(mapData.dropType=="group"){
+                loadGroupedMap();
+            }
     }
     });
-});
+}
+function loadGroup(){
+    groupId=Number(urlComponents[4]);
+    console.log(groupId);
+     getGroupDrops(localStorage.token, groupId).then((response) => {
+        if (response.status != "ok") {
+            showError("Error while loading group drops: "+response.message, function(){location.href="/"});
+        } else {
+            loadDrops(response.response);
+                    }
+    });
+
+}
+$(document).ready(function() {
+    if (!localStorage.token) {
+        logOut();
+    }
+    if ($("#show-coverage").is(":checked")) {
+        coverageLayer.addTo(map);
+    }
+    stretchOverlay();
+    if(dgOrMap=="map"){
+        loadMap();
+    }
+    else{
+        loadGroup();
+    }
+}
+);
 //pmtiles.leafletRasterLayer(layer,{attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>'}).addTo(map)

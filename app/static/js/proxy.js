@@ -31,22 +31,22 @@ const logIn = async (mail, password, fingerprint) => {
         }
     });
     return response;
-}
+};
 const getUserInfoViaToken = async (token) => {
     return await apiRequest("/v1/user/getUserInfoViaToken.php", "GET", {
         "token": token
     });
-}
+};
 const getOwnMaps = async (token) => {
     return await apiRequest("/v1/maps/getMaps.php", "GET", {
         "token": token
     });
-}
+};
 const getPlayableMaps = async (token) => {
     return await apiRequest("/v1/maps/getPlayableMaps.php", "GET", {
         "token": token
     });
-}
+};
 const getMapDrops = async (token, mapId) => {
     return await apiRequest("/v1/maps/getDrops.php", "GET", {
         "token": token,
@@ -54,7 +54,7 @@ const getMapDrops = async (token, mapId) => {
             "mapId": mapId
         }
     });
-}
+};
 const getGroupDrops = async (token, groupId) => {
     return await apiRequest("/v1/maps/getDrops.php", "GET", {
         "token": token,
@@ -62,11 +62,23 @@ const getGroupDrops = async (token, groupId) => {
             "groupId": groupId
         }
     });
-}
+};
 
 const getPlayableMap = async (token, mapId) => {
     return await apiRequest("/v1/maps/getPlayableMap.php", "GET", {
         "token": token,
-        "params": {"id":mapId},
+        "params": {
+            "id": mapId
+        },
     });
-}
+};
+
+const getPublicDropGroups = async (token, mapId) => {
+    return await apiRequest("/v1/maps/getPublicDropGroups.php", "GET", {
+        "token": token,
+        "params": {
+            "mapId": mapId,
+            "withTags": true
+        },
+    });
+};
