@@ -216,20 +216,52 @@ html, body{
     text-align:center;
     text-transform:uppercase;
 }
-#loading{
+#loading, #error-box-container{
     display:flex;
     justify-content:center;
     align-items:center;
-    z-index:999;
     position:absolute;
     top:90px;
     left:0;
     right:0;
     bottom:0;
-
+}
+#loading{
+    z-index:998;
     background:#333;
-
+}
+#error-box-container{
+    background:rgba(0.2,0.2,0.2,0.5);
+    z-index:999;
 }
 #loading-image{
     transform:scale(0.2);
+}
+#error-box{
+    flex:0.4;
+    width:40%;
+    height:40%;
+    display:flex;
+    flex-direction:column;
+    background:#333;
+    justify-content:space-between;
+    border-radius:10px;
+}
+#error-box-title{
+    text-transform:uppercase;
+    background:#300;
+    text-align:center;
+    padding:0.4em;
+    margin:0;
+    border-radius:10px 10px 0px 0px;
+}
+#error-box-bottom{
+    padding:1em;
+    display:flex;
+    justify-content:center;
+}
+#error-box-content{
+    padding:1em;
+    font-size:15pt;
+    font-weight:bold;
 }

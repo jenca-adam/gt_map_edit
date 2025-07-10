@@ -389,21 +389,19 @@ $(document).ready(function() {
     getPlayableMap(localStorage.token, mapId).then((response)=>{
         console.log(response);
         if(response.status!="ok"){
-            console.error(response.message);
+            showError("Error while loading map data: "+response.message, function(){location.href="/"});
         }
         else{
             mapData=response.response;
             $("#map-title").text(response.response.name);
-        }
-    });
     getMapDrops(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
-            console.error(response.message);
+            showError("Error while loading map drops: "+response.message, function(){location.href="/"});
         } else {
             console.log(response.response);
             drops = response.response;
             bbox = getBbox(drops);
-            if (bbox) {
+            if (bbox&&drops.length) {
                 map.fitBounds(bbox);
             }
             core.waitInitted().then(() => {
@@ -417,6 +415,8 @@ $(document).ready(function() {
                 drawMarkers();
             });
         }
+    });
+    }
     });
 });
 //pmtiles.leafletRasterLayer(layer,{attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>'}).addTo(map)
