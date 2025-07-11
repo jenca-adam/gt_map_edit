@@ -48,6 +48,40 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     minZoom: 1,
     attribution: '&copy; Google'
 });
+//util
+function cdblclick(click, dblclick, el) {
+    let tObject = {
+        Clicks: 0,
+        onClick: click,
+        onDblClick: dblclick
+    };
+
+    el.addEventListener('click', function(object) {
+        object.Clicks += 1;
+
+        if (object.Clicks === 1) {
+            object.Timeout = window.setTimeout(function() {
+                if (typeof object.onClick == 'function') {
+                    object.onClick()
+                };
+
+                object.Clicks = 0
+
+
+            }.bind(this, object), 300)
+        } else {
+            window.clearTimeout(object.Timeout);
+
+            if (typeof object.onDblClick === 'function') {
+                object.onDblClick()
+            };
+
+            object.Clicks = 0
+
+        }
+    }.bind(el, tObject))
+};
+
 // MARKER INTERACTION
 function cancelBoxDrag() {
     isDraggingBox = false;
@@ -434,23 +468,22 @@ $("#dp-input").on("keyup change", function() {
         $("#drop-list").append(dropEls[drop.id]);
     }
 });
-$("#drop-filter-select").on("change", function(){
+$("#drop-filter-select").on("change", function() {
     console.log($(this).val());
-    if($(this).val()=="Selected"){
-        filteredDrops = drops.filter((d)=>selectedMarkers.has(d.id));
-    }
-    else{
+    if ($(this).val() == "Selected") {
+        filteredDrops = drops.filter((d) => selectedMarkers.has(d.id));
+    } else {
         filteredDrops = drops;
     }
-    var numPages = Math.ceil(filteredDrops.length / pageSize);
+    var numPages = Math.max(1, Math.ceil(filteredDrops.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
-
+    $("#dp-input").val(Math.max(1, Math.min($("#dp-input").val(), numPages)));
     $("#dp-input").change();
 });
 
 function loadDrops(d) {
-    var numPages = Math.ceil(d.length / pageSize);
+    var numPages = Math.max(1, Math.ceil(d.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     drops = d;
@@ -575,6 +608,27 @@ function loadGroup() {
     });
 
 }
+
+$(document).on("click", ".drop",
+    function(ev) {
+        const id = $(this).data("id");
+        console.log(id);
+        const drop = dropsById[id];
+        const url = `https://www.google.com/maps/@?api=1&map_action=pano&pano=${drop.panoId}&heading=${drop.heading}&pitch=${drop.pitch}&fov=90`;
+        window.open(url);
+
+    }
+);
+$(document).on("auxclick", ".drop",
+    function(ev) {
+        if (ev.button != 1) return;
+        console.log(this.timeout);
+        clearTimeout(this.timeout);
+        const id = $(this).data("id");
+        const drop = dropsById[id];
+
+        map.setView([drop.lat, drop.lng]);
+    });
 
 $(document).ready(function() {
     $(".drops-only").hide();
