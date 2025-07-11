@@ -230,13 +230,10 @@ unsigned int box_select(float x1, float y1, float x2, float y2,
     for (int ly = tile_y1; ly <= tile_y2; ly++) {
       if (lx < 0 || lx > g.width || ly < 0 || ly > g.height)
         continue;
-      printf("TILE %d\n", g.width * ly + lx);
       marker_list *ml = g.g[g.width * ly + lx];
       while (ml) {
         marker m = ml->m;
-        printf("%f %f (%f %f %f %f)\n", m.x, m.y, x1, y1, x2, y2);
         if (m.x > x1 && m.x < x2 && m.y > y1 && m.y < y2) {
-          printf("SELECTED\n");
           id_buffer[buffer_index] = m.id;
           buffer_index++;
         }
@@ -333,13 +330,14 @@ int init() {
       "out vec4 color;\n"
       "void main(){\n"
       "vec2 position=vec2(gl_FragCoord.x, height-gl_FragCoord.y);\n"
-      "if(distance(position, mcenter)<=msize*0.5){\n" // circles
+      "float d =  distance(position, mcenter);\n"
+      "if(d<=msize*0.5){\n" // circles
       "color=vec4(marker_color, 1.0);\n"
-      "}\n"
-      "else{\n"
-      "color=vec4(0.0 ,0.0,0.0,0.0);\n"
-      "}\n"
-      "}\n";
+      "if(msize*0.5-d<=1.0){\n" //border
+      "color=vec4(0.0, 0.0, 0.0, 1.0);"  
+      "}}\n"
+      "else {discard;}\n"
+       "}\n";
   emscripten_webgl_make_context_current(ctx);
   stretch();
   GLuint point_vs = LoadShader(GL_VERTEX_SHADER, point_vs_src);
@@ -394,11 +392,11 @@ unsigned int *create_uint_buffer(int num) {
   return (unsigned int *)malloc(num * sizeof(unsigned int));
 }
 void destroy_buffer(void *buf) { free(buf); }
-void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat tx,
+void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys, int hnum, GLfloat tx,
                   GLfloat ty, GLfloat tz, GLfloat tw, GLfloat ox, GLfloat oy,
                   GLfloat zoom, GLfloat size, GLfloat cr, GLfloat cg,
-                  GLfloat cb, GLfloat scr, GLfloat scg, GLfloat scb) {
-  GLuint posobj = 0, sposobj = 0;
+                  GLfloat cb, GLfloat scr, GLfloat scg, GLfloat scb, GLfloat hsize, GLfloat hcr, GLfloat hcg, GLfloat hcb) {
+  GLuint posobj = 0, sposobj = 0, hposobj=0;
   int w, h;
   emscripten_get_canvas_element_size("#overlay", &w, &h);
   printf("%d %f\n", snum, sxys[0]);
@@ -406,6 +404,13 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat tx,
     glGenBuffers(1, &sposobj);
     glBindBuffer(GL_ARRAY_BUFFER, sposobj);
     glBufferData(GL_ARRAY_BUFFER, snum * sizeof(GLfloat), sxys, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(0);
+  }
+    if (hnum) {
+    glGenBuffers(1, &hposobj);
+    glBindBuffer(GL_ARRAY_BUFFER, hposobj);
+    glBufferData(GL_ARRAY_BUFFER, hnum * sizeof(GLfloat), hxys, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(0);
   }
@@ -462,6 +467,7 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat tx,
 
     glUniform3f(u_color, cr, cg, cb);
   }
+
   // default
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -475,7 +481,16 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat tx,
     glDrawArrays(GL_POINTS, 0, snum / 2);
     glDeleteBuffers(1, &sposobj);
   }
+if (hposobj) {
+    glBindBuffer(GL_ARRAY_BUFFER, hposobj);
+    glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
+    glEnableVertexAttribArray(0);
 
+    glUniform3f(u_color, hcr, hcg, hcb);
+    glUniform1f(u_size, hsize);
+    glDrawArrays(GL_POINTS, 0, hnum / 2);
+    glDeleteBuffers(1, &hposobj);
+  }
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   glDeleteBuffers(1, &posobj);

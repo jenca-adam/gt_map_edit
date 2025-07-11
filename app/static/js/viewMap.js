@@ -37,6 +37,8 @@ var groupData;
 var dropPage;
 var numPages;
 var filteredDrops;
+var hoveredMarker = null;
+var hoveredMarkerBuffer=0;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     minZoom: 1,
@@ -49,39 +51,6 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     attribution: '&copy; Google'
 });
 //util
-function cdblclick(click, dblclick, el) {
-    let tObject = {
-        Clicks: 0,
-        onClick: click,
-        onDblClick: dblclick
-    };
-
-    el.addEventListener('click', function(object) {
-        object.Clicks += 1;
-
-        if (object.Clicks === 1) {
-            object.Timeout = window.setTimeout(function() {
-                if (typeof object.onClick == 'function') {
-                    object.onClick()
-                };
-
-                object.Clicks = 0
-
-
-            }.bind(this, object), 300)
-        } else {
-            window.clearTimeout(object.Timeout);
-
-            if (typeof object.onDblClick === 'function') {
-                object.onDblClick()
-            };
-
-            object.Clicks = 0
-
-        }
-    }.bind(el, tObject))
-};
-
 // MARKER INTERACTION
 function cancelBoxDrag() {
     isDraggingBox = false;
@@ -217,13 +186,13 @@ $("#mapview-map").mouseup(function(ev) {
         } else {
             selectedMarkers.add(drop);
         }
-        makeMarkerBuffer();
+        makeMarkerBuffers();
         drawMarkers();
         $("#drop-filter-select").change();
     } else if (selectedMarkers && !ev.shiftKey) {
         selectedMarkers.clear();
         $("#drop-filter-select").change();
-        makeMarkerBuffer();
+        makeMarkerBuffers();
         drawMarkers();
     }
 })
@@ -243,7 +212,7 @@ function boxSelect(x1, y1, x2, y2) {
     $("#drop-filter-select").change();
     if (numDrops > 0) {
 
-        makeMarkerBuffer();
+        makeMarkerBuffers();
         drawMarkers();
     }
 }
@@ -279,12 +248,12 @@ function getBbox() {
     return bbox;
 }
 
-function makeMarkerBuffer() {
+function makeMarkerBuffers() {
     // creates a buffer of marker positions
     // called every time markers update and when they load for the first time
     markerPositions = new Float32Array(
         drops.filter(
-            (drop) => !selectedMarkers.has(drop.id)
+            (drop) => !(selectedMarkers.has(drop.id)||drop.id==hoveredMarker)
         ).map(
             (drop) => [drop.lat, drop.lng]
         ).flat()
@@ -296,7 +265,7 @@ function makeMarkerBuffer() {
     Module.HEAPF32.set(markerPositions, markerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
     if (selectedMarkers) {
         selMarkerPositions = new Float32Array(
-            selectedMarkers.values().toArray().map(
+            selectedMarkers.values().toArray().filter((id)=>(id!=hoveredMarker)).map(
                 (dropId) => {
                     var drop = dropsById[dropId];
                     return [drop.lat, drop.lng]
@@ -311,6 +280,13 @@ function makeMarkerBuffer() {
         Module.HEAPF32.set(selMarkerPositions, selMarkerPosBuffer / Float32Array.BYTES_PER_ELEMENT);
     } else if (selMarkerPosBuffer) {
         core.destroyBuffer(selMarkerPosBuffer);
+    }
+    if(hoveredMarker){
+        if(hoveredMarkerBuffer){
+            core.destroyBuffer(hoveredMarkerBuffer);
+        }
+        hoveredMarkerBuffer = core.createFloatBuffer(2);
+        Module.HEAPF32.set( new Float32Array([dropsById[hoveredMarker].lat, dropsById[hoveredMarker].lng]), hoveredMarkerBuffer/Float32Array.BYTES_PER_ELEMENT)
     }
     var projectResult = projectMarkers(markerPosBuffer, markerPositions.length, 1.0);
     projectedMarkersBuffer = projectResult[0];
@@ -344,13 +320,13 @@ function projectSingle(lat, lon, scale) {
     return projected[1];
 }
 
-function _drawMarkers(buf1, l1, buf2, l2, rgb) {
+function _drawMarkers(buf1, l1, buf2, l2, buf3, l3, rgb) {
     var transform = map.options.crs.transformation;
     var origin = map.getPixelOrigin();
     var zoom = map.getZoom();
     var panpos = map._getMapPanePos();
-
-    core.drawMarkers(buf1, l1, buf2, l2, transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, 11.0, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2]);
+    console.log(buf3, l3);
+    core.drawMarkers(buf1, l1, buf2, l2, buf3, l3,  transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, 11.0, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2], 15.0, 0,1,0);
 }
 
 function drawMarkers() {
@@ -362,7 +338,7 @@ function drawMarkers() {
         return [(pt.x - overlay.offsetWidth / 2) / overlay.offsetWidth * 2, -(pt.y - overlay.offsetHeight / 2) / overlay.offsetHeight * 2]
     }).filter((loc) => loc[0] < 1 && loc[0] > -1 && loc[1] < 1 && loc[1] > -1).flat());*/
     var rgb = hexToRgb($("#marker-color").val());
-    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.size * 2, rgb);
+    _drawMarkers(markerPosBuffer, markerPositions.length, selMarkerPosBuffer, selectedMarkers.size * 2, hoveredMarkerBuffer, (!!hoveredMarker)*2, rgb);
 }
 
 
@@ -475,15 +451,30 @@ $("#drop-filter-select").on("change", function() {
     } else {
         filteredDrops = drops;
     }
-    var numPages = Math.max(1, Math.ceil(filteredDrops.length / pageSize));
+    numPages = Math.max(1, Math.ceil(filteredDrops.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     $("#dp-input").val(Math.max(1, Math.min($("#dp-input").val(), numPages)));
     $("#dp-input").change();
 });
-
+$("#dp-minus").click(function(){
+    var val=Number($("#dp-input").val());
+    console.log(val);
+    if(val>1){
+        $("#dp-input").val(val-1);
+        $("#dp-input").change();
+    }
+});
+$("#dp-plus").click(function(){
+    var val=Number($("#dp-input").val());
+    console.log(val, numPages);
+    if(val<numPages){
+        $("#dp-input").val(val+1);
+        $("#dp-input").change();
+    }
+});
 function loadDrops(d) {
-    var numPages = Math.max(1, Math.ceil(d.length / pageSize));
+    numPages = Math.max(1, Math.ceil(d.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     drops = d;
@@ -492,7 +483,7 @@ function loadDrops(d) {
         map.fitBounds(bbox);
     }
     core.waitInitted().then(() => {
-        makeMarkerBuffer();
+        makeMarkerBuffers();
 
         $("#loading").hide();
         for (var drop of drops) {
@@ -505,8 +496,9 @@ function loadDrops(d) {
         }
         $("#drop-filter-select").change();
         gridMarkers();
-        drawMarkers();
+        
         stretchOverlay();
+        drawMarkers();
     });
 
 
@@ -627,9 +619,19 @@ $(document).on("auxclick", ".drop",
         const id = $(this).data("id");
         const drop = dropsById[id];
 
-        map.setView([drop.lat, drop.lng]);
+        map.setView([drop.lat, drop.lng],Math.max(map.getZoom(), 12));
     });
-
+$(document).on("mouseenter",".dl-item:has(.drop)", function(ev){
+     hoveredMarker=$(this).find(".drop").data("id");
+     makeMarkerBuffers();
+    drawMarkers();
+});
+$(document).on("mouseleave", ".dl-item:has(.drop)", function(ev){
+    console.log(hoveredMarker);
+    hoveredMarker = null;
+     makeMarkerBuffers();
+    drawMarkers();
+});
 $(document).ready(function() {
     $(".drops-only").hide();
     dropPage = Number($("#dp-input").val()) - 1;
