@@ -324,3 +324,13 @@ html, body{
     background:#555;
     font-size:12pt;
 }
+#drop-filter-select{
+    flex:1;
+    background: #333;
+    color: #eee;
+    border: 1px solid #eee;
+    padding: 0.5em;
+    border-radius: 5px;
+    font-size: 12pt;
+    font-family: "Roboto Condensed";
+}

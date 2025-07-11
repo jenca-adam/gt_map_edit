@@ -1,5 +1,7 @@
 Module.onAbort = (msg) => {
-    showError("FATAL EMSCRIPTEN ERROR:<br>"+msg+"<br>Please create a bug report.", function(){location.reload()});
+    showError("FATAL EMSCRIPTEN ERROR:<br>" + msg + "<br>Please create a bug report.", function() {
+        location.reload()
+    });
 }
 Module.onRuntimeInitialized = () => {
     if (core.init() == -1) {
@@ -27,6 +29,6 @@ const core = {
     closestMarker: Module.cwrap("closest_marker", "number", ["float", "float", "float"]),
     isOnMarker: Module.cwrap("is_on_marker", "number", ["number", "number"]),
     boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"]),
-    multiProject: Module.cwrap("multi_project", "", ["number" ,"number", "float", "float", "float", "float", "float", "number"]),
+    multiProject: Module.cwrap("multi_project", "", ["number", "number", "float", "float", "float", "float", "float", "number"]),
     fboCap: Module.cwrap("fbo_cap", "number", []),
 };

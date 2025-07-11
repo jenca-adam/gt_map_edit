@@ -86,7 +86,7 @@ const getDropGroup = async (token, groupId) => {
     return await apiRequest("/v1/maps/getDropGroup.php", "GET", {
         "token": token,
         "params": {
-            "id":groupId
+            "id": groupId
         }
     });
 };

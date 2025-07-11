@@ -40,21 +40,21 @@ const showOwnMaps = () => {
     });
 }
 $(".maps-search-input").keyup(function() {
-    if(!otherMaps) return;
+    if (!otherMaps) return;
     var value = $(this).val().toLowerCase();
     console.log(value);
     otherMapList.empty();
     var count = 0;
 
-    for (map of otherMaps){
-        if(count>=mapThreshold) break;
-        
-        if(map.name.toLowerCase().includes(value)){
+    for (map of otherMaps) {
+        if (count >= mapThreshold) break;
+
+        if (map.name.toLowerCase().includes(value)) {
             console.log(map);
             otherMapList.append(mapElements[map.id]);
-            count+=1
+            count += 1
         }
-        
+
     }
 });
 const showOtherMaps = () => {
@@ -68,7 +68,7 @@ const showOtherMaps = () => {
         } else {
             otherMapList.hide();
             otherMaps = response.response;
-            var count=0;
+            var count = 0;
             for (map of response.response) {
                 const clone = mapTemplate.content.cloneNode(true);
                 $(clone).find(".map-title").text(map.name);
@@ -82,8 +82,8 @@ const showOtherMaps = () => {
                 $(clone).find(".map-select").attr("data-id", map.id);
                 $(clone).find(".map").data("name", map.name.toLowerCase())
                 $(clone).find(".map-select").text("View");
-                mapElements[map.id]=$('<div>').append(clone).html();
-                count+=1;
+                mapElements[map.id] = $('<div>').append(clone).html();
+                count += 1;
 
             }
             $(".tab.other .loading").hide();
@@ -119,4 +119,6 @@ $(document).ready(() => {
         });
     }
 });
-$(document).on("click", ".map-select", function(){location.href = ("/view/map/" + $(this).data("id"))});
+$(document).on("click", ".map-select", function() {
+    location.href = ("/view/map/" + $(this).data("id"))
+});

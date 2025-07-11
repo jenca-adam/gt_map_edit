@@ -36,7 +36,7 @@ var mapData;
 var groupData;
 var dropPage;
 var numPages;
-
+var filteredDrops;
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     minZoom: 1,
@@ -114,9 +114,9 @@ $("#mapview-map").mousemove(function(ev) {
     var y = ev.clientY - offset.top;
     var s = (core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0);
     var screencolor = [(s & 255), ((s >> 8) & 255), ((s >> 16) & 255)];
-    var alpha = (s>>24) & 255;
-    
-    if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor))&&alpha) {
+    var alpha = (s >> 24) & 255;
+
+    if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor)) && alpha) {
         console.log(x, $("#mapview-map").height() - y)
         $("#mapview-map").css({
             "cursor": "pointer"
@@ -160,7 +160,7 @@ $("#mapview-map").mouseup(function(ev) {
     var s = core.isOnMarker(x, $("#mapview-map").height() - y) >>> 0;
     var screencolor = [(s & 255), ((s >> 8) & 255), ((s >> 16) & 255)];
 
-    var alpha = (s>>24) & 255;
+    var alpha = (s >> 24) & 255;
     console.log(screencolor);
 
     var ll = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
@@ -168,7 +168,7 @@ $("#mapview-map").mouseup(function(ev) {
     var xy = projectSingle(ll.lat, ll.lng, 1);
     console.log("M", ll.lat, ll.lng, xy);
 
-    if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor))&&alpha) {
+    if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor)) && alpha) {
         var ll = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
 
         var xy = projectSingle(ll.lat, ll.lng, 1);
@@ -185,8 +185,10 @@ $("#mapview-map").mouseup(function(ev) {
         }
         makeMarkerBuffer();
         drawMarkers();
+        $("#drop-filter-select").change();
     } else if (selectedMarkers && !ev.shiftKey) {
         selectedMarkers.clear();
+        $("#drop-filter-select").change();
         makeMarkerBuffer();
         drawMarkers();
     }
@@ -203,6 +205,8 @@ function boxSelect(x1, y1, x2, y2) {
     dropIds.forEach((d) => {
         selectedMarkers.add(d)
     });
+
+    $("#drop-filter-select").change();
     if (numDrops > 0) {
 
         makeMarkerBuffer();
@@ -414,26 +418,39 @@ $("#show-coverage").change(function() {
     }
 });
 $(".maps-search-input").keyup(function() {
-    var v=$(this).val().toLowerCase();
-    $("#drop-list").children(".dl-item").each(function(){
-        if($(this).data("name").includes(v)){
+    var v = $(this).val().toLowerCase();
+    $("#drop-list").children(".dl-item").each(function() {
+        if ($(this).data("name").includes(v)) {
             $(this).show();
-        }
-        else{
+        } else {
             $(this).hide();
         }
-    }
-    );
+    });
 });
-$("#dp-input").on("keyup change",function(){
-    dropPage=$(this).val()-1;
+$("#dp-input").on("keyup change", function() {
+    dropPage = $(this).val() - 1;
     $("#drop-list").empty();
-    for(drop of drops.slice(dropPage*pageSize, (dropPage+1)*pageSize)){
+    for (drop of filteredDrops.slice(dropPage * pageSize, (dropPage + 1) * pageSize)) {
         $("#drop-list").append(dropEls[drop.id]);
     }
 });
+$("#drop-filter-select").on("change", function(){
+    console.log($(this).val());
+    if($(this).val()=="Selected"){
+        filteredDrops = drops.filter((d)=>selectedMarkers.has(d.id));
+    }
+    else{
+        filteredDrops = drops;
+    }
+    var numPages = Math.ceil(filteredDrops.length / pageSize);
+    $("#dp-total").text(numPages);
+    $("#dp-input").attr("max", numPages);
+
+    $("#dp-input").change();
+});
+
 function loadDrops(d) {
-    var numPages = Math.ceil(d.length/pageSize);
+    var numPages = Math.ceil(d.length / pageSize);
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     drops = d;
@@ -451,9 +468,9 @@ function loadDrops(d) {
             $(clone).find(".drop-image").attr("src", "/static/images/flags/svg/" + drop.code + ".svg");
             $(clone).find(".drop-name").text(drop.id);
             $(clone).find(".drop").attr("data-id", drop.id);
-            dropEls[drop.id]=$(clone).find(".dl-item").prop('outerHTML');
+            dropEls[drop.id] = $(clone).find(".dl-item").prop('outerHTML');
         }
-        $("#dp-input").change();
+        $("#drop-filter-select").change();
         gridMarkers();
         drawMarkers();
         stretchOverlay();
@@ -516,7 +533,7 @@ function loadMap() {
             mapData = response.response;
             $("#map-title").text(response.response.name);
             if (mapData.dropType == "single") {
-                $("#drop-paginator").show();
+                $(".drops-only").show();
                 loadSingleMap();
             } else if (mapData.dropType == "group") {
                 loadGroupedMap();
@@ -526,23 +543,29 @@ function loadMap() {
 }
 
 function loadGroup() {
-    $("#drop-paginator").show();
+    $(".drops-only").show();
     groupId = Number(urlComponents[4]);
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
-            showError("Error while loading group: " + response.message, function(){history.back()});
+            showError("Error while loading group: " + response.message, function() {
+                history.back()
+            });
         } else {
             for (var dg of response.response) {
                 if (dg.id == groupId)
                     groupData = dg
             }
             if (!groupData) {
-                showError("No group id " + groupId + " in map id " + mapId, function(){history.back()});
+                showError("No group id " + groupId + " in map id " + mapId, function() {
+                    history.back()
+                });
             } else {
                 $("#map-title").text(groupData.publicName);
                 getGroupDrops(localStorage.token, groupId).then((response) => {
                     if (response.status != "ok") {
-                        showError("Error while loading group drops: " + response.message, function(){history.back()});
+                        showError("Error while loading group drops: " + response.message, function() {
+                            history.back()
+                        });
                     } else {
                         loadDrops(response.response);
                     }
@@ -554,10 +577,10 @@ function loadGroup() {
 }
 
 $(document).ready(function() {
-    $("#drop-paginator").hide();
-    dropPage=Number($("#dp-input").val())-1;
-    if (dropPage==-1){
-        dropPage=0;
+    $(".drops-only").hide();
+    dropPage = Number($("#dp-input").val()) - 1;
+    if (dropPage == -1) {
+        dropPage = 0;
         $("#dp-input").val(1);
     }
     $("#group-search").hide();
@@ -574,4 +597,3 @@ $(document).ready(function() {
         loadGroup();
     }
 });
-

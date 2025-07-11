@@ -1,1 +1,3 @@
-function hideLoading(){$("#loading").hide()}
+function hideLoading() {
+    $("#loading").hide()
+}

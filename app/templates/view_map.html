@@ -8,7 +8,7 @@
 <template id="dg-template">
     <div class="dl-item">
         <div class="drop-group"><img class="flag-small drop-group-image"><span class="drop-group-name"></span></div>
-    <div class="drop-count-outer"><span class="drop-count"></span>&nbsp;drops</div>
+        <div class="drop-count-outer"><span class="drop-count"></span>&nbsp;drops</div>
     </div>
 </template>
 <template id="drop-template">
@@ -22,11 +22,16 @@
             <div class="panel-title">
                 <h1 id="map-title"></h1>
             </div>
-
-        <div id="group-search" class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by group name"></input></div>
+            <div id="group-search" class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by group name"></input></div>
+            <div class="filter drops-only maps-search" id="drop-filter">
+                <select id="drop-filter-select">
+                    <option name="all" value="All drops">All drops</option>
+                    <option name="selected" value="Selected">Selected</option>
+                </select>
+            </div>
             <div class="panel-content" id="drop-list">
             </div>
-            <div class="paginator" id="drop-paginator">
+            <div class="paginator drops-only" id="drop-paginator">
                 Showing page&nbsp;<input type="number" id="dp-input" value="1" min="1"></input>&nbsp;of&nbsp;<span id="dp-total"></span>
             </div>
         </div>
