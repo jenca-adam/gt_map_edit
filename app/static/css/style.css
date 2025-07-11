@@ -289,7 +289,7 @@ html, body{
     padding:0.5em;
     border-top:1px solid #aaa;
 }
-.drop-group{
+.drop-group, .drop{
     font-weight:bold;
     display:flex;
     align-items:center;
@@ -308,4 +308,19 @@ html, body{
 }
 .map-title{
     padding:0.1em;
+}
+#dp-input{
+    width:3em;
+    appearance:textfield!important;
+}
+#dp-input::-webkit-outer-spin-button,
+#dp-input::-webkit-inner-spin-button {
+    appearance: none;
+    display:none;
+
+}
+#drop-paginator{
+    padding:0.5em;
+    background:#555;
+    font-size:12pt;
 }

@@ -5,10 +5,15 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {%endblock%}
 {%block body%}
-<template id="dli-template">
+<template id="dg-template">
     <div class="dl-item">
         <div class="drop-group"><img class="flag-small drop-group-image"><span class="drop-group-name"></span></div>
     <div class="drop-count-outer"><span class="drop-count"></span>&nbsp;drops</div>
+    </div>
+</template>
+<template id="drop-template">
+    <div class="dl-item">
+        <div class="drop"><img class="flag-small drop-image"><span class="drop-name"></span></div>
     </div>
 </template>
 <div id="site" class="nopad">
@@ -20,6 +25,9 @@
 
         <div id="group-search" class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by group name"></input></div>
             <div class="panel-content" id="drop-list">
+            </div>
+            <div class="paginator" id="drop-paginator">
+                Showing page&nbsp;<input type="number" id="dp-input" value="1" min="1"></input>&nbsp;of&nbsp;<span id="dp-total"></span>
             </div>
         </div>
         <div id="mapview" class="panel">
@@ -37,7 +45,6 @@
 </div>
 {%endblock%}
 {%block scripts%}
-
 <script src="/static/js/core/core.min.js"></script>
 <script src="/static/js/coreLoader.js"></script>
 <script src="/static/js/proxy.js"></script>

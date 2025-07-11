@@ -10,8 +10,10 @@ const url = new URL(document.location);
 const urlComponents = url.pathname.split("/");
 const mapId = Number(urlComponents[3]);
 var groupId;
+const pageSize = 50;
 const dgOrMap = urlComponents[2];
-const dTemplate = document.querySelector("#dli-template");
+const dgTemplate = document.querySelector("#dg-template");
+const dTemplate = document.querySelector("#drop-template");
 const overlay = $("#overlay")[0];
 var drops;
 var bbox;
@@ -21,6 +23,7 @@ var selectedMarkers = new Set();
 var selMarkerPositions;
 var selMarkerPosBuffer = 0;
 var dropsById = {};
+var dropEls = {};
 var dragStartPos;
 var dropGroups;
 var isDraggingBox = false;
@@ -31,6 +34,8 @@ var projectedMarkersBuffer = 0;
 var projectedMarkers;
 var mapData;
 var groupData;
+var dropPage;
+var numPages;
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
@@ -408,8 +413,29 @@ $("#show-coverage").change(function() {
         coverageLayer.removeFrom(map);
     }
 });
-
+$(".maps-search-input").keyup(function() {
+    var v=$(this).val().toLowerCase();
+    $("#drop-list").children(".dl-item").each(function(){
+        if($(this).data("name").includes(v)){
+            $(this).show();
+        }
+        else{
+            $(this).hide();
+        }
+    }
+    );
+});
+$("#dp-input").on("keyup change",function(){
+    dropPage=$(this).val()-1;
+    $("#drop-list").empty();
+    for(drop of drops.slice(dropPage*pageSize, (dropPage+1)*pageSize)){
+        $("#drop-list").append(dropEls[drop.id]);
+    }
+});
 function loadDrops(d) {
+    var numPages = Math.ceil(d.length/pageSize);
+    $("#dp-total").text(numPages);
+    $("#dp-input").attr("max", numPages);
     drops = d;
     bbox = getBbox(drops);
     if (bbox && drops.length) {
@@ -421,9 +447,14 @@ function loadDrops(d) {
         $("#loading").hide();
         for (var drop of drops) {
             dropsById[drop.id] = drop;
+            const clone = dTemplate.content.cloneNode(true);
+            $(clone).find(".drop-image").attr("src", "/static/images/flags/svg/" + drop.code + ".svg");
+            $(clone).find(".drop-name").text(drop.id);
+            $(clone).find(".drop").attr("data-id", drop.id);
+            dropEls[drop.id]=$(clone).find(".dl-item").prop('outerHTML');
         }
+        $("#dp-input").change();
         gridMarkers();
-        
         drawMarkers();
         stretchOverlay();
     });
@@ -434,16 +465,18 @@ function loadDrops(d) {
 function loadDropGroups(g) {
     dropGroups = g;
     for (var dg of dropGroups) {
-        const clone = dTemplate.content.cloneNode(true);
+        const clone = dgTemplate.content.cloneNode(true);
         $(clone).find(".drop-group-image").attr("src", "/static/images/flags/svg/" + dg.code + ".svg");
         $(clone).find(".drop-group-name").text(dg.publicName);
         $(clone).find(".drop-count").text(dg.numberOfDrops);
         $(clone).find(".dl-item").data("id", dg.id);
+        $(clone).find(".dl-item").data("name", dg.publicName.toLowerCase());
         $(clone).find(".drop-group").click(function() {
             location.href = "/view/group/" + mapId + "/" + $(this).parent().data("id")
         });
         $("#drop-list").append(clone);
     }
+    $(".maps-search-input").keyup();
 }
 
 function loadSingleMap() {
@@ -459,7 +492,6 @@ function loadSingleMap() {
 }
 
 function loadGroupedMap() {
-
     $("#group-search").show();
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
@@ -484,6 +516,7 @@ function loadMap() {
             mapData = response.response;
             $("#map-title").text(response.response.name);
             if (mapData.dropType == "single") {
+                $("#drop-paginator").show();
                 loadSingleMap();
             } else if (mapData.dropType == "group") {
                 loadGroupedMap();
@@ -493,7 +526,7 @@ function loadMap() {
 }
 
 function loadGroup() {
-
+    $("#drop-paginator").show();
     groupId = Number(urlComponents[4]);
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
@@ -521,7 +554,12 @@ function loadGroup() {
 }
 
 $(document).ready(function() {
-
+    $("#drop-paginator").hide();
+    dropPage=Number($("#dp-input").val())-1;
+    if (dropPage==-1){
+        dropPage=0;
+        $("#dp-input").val(1);
+    }
     $("#group-search").hide();
     if (!localStorage.token) {
         logOut();
