@@ -323,6 +323,9 @@ html, body{
     padding:0.5em;
     background:#555;
     font-size:12pt;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 #drop-filter-select{
     flex:1;
@@ -333,4 +336,29 @@ html, body{
     border-radius: 5px;
     font-size: 12pt;
     font-family: "Roboto Condensed";
+}
+#dp-arrows{
+    display:flex;
+}
+.dp-arrow {
+	font-weight: bold;
+	background: #333;
+	color: #eee;
+	appearance: none;
+	border: 1px solid #eee;
+	padding:0.5em;
+        border-radius: 50%;
+	margin: 0.1em;
+        cursor:pointer;
+        aspect-ratio:1;
+        display:flex;
+        align-items:center;
+}
+.dp-arrow:hover{
+    background:#eee;
+    color:#333;
+    border-color:#333;
+}
+.dl-item:hover{
+    background:#444;
 }

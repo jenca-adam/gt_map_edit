@@ -475,15 +475,30 @@ $("#drop-filter-select").on("change", function() {
     } else {
         filteredDrops = drops;
     }
-    var numPages = Math.max(1, Math.ceil(filteredDrops.length / pageSize));
+    numPages = Math.max(1, Math.ceil(filteredDrops.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     $("#dp-input").val(Math.max(1, Math.min($("#dp-input").val(), numPages)));
     $("#dp-input").change();
 });
-
+$("#dp-minus").click(function(){
+    var val=Number($("#dp-input").val());
+    console.log(val);
+    if(val>1){
+        $("#dp-input").val(val-1);
+        $("#dp-input").change();
+    }
+});
+$("#dp-plus").click(function(){
+    var val=Number($("#dp-input").val());
+    console.log(val, numPages);
+    if(val<numPages){
+        $("#dp-input").val(val+1);
+        $("#dp-input").change();
+    }
+});
 function loadDrops(d) {
-    var numPages = Math.max(1, Math.ceil(d.length / pageSize));
+    numPages = Math.max(1, Math.ceil(d.length / pageSize));
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     drops = d;
