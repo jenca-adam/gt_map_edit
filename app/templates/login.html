@@ -13,7 +13,7 @@ Log In
 	<form id="login-method-select">
 		<p><input type="radio" name="lm" id="lms-mail-password"></input><label for="lms-mail-password" class="label">Mail &amp; Password</label></p>
 
-		<p><input type="radio" name="lm" id="lms-token"></input><label for="lms-token" class="label">Token</label></p>
+                <p><input type="radio" name="lm" id="lms-token"></input><label for="lms-token" class="label">Token</label><button id="th-open">?</button></p>
 	</form >
 	<form id="form-mail-password" >
 		<p> <b>Warning:</b> This will log you out on your other sessions </p>
@@ -31,6 +31,16 @@ Log In
 
 	</form>
 </div>
+</div>
+<div class="darkbox-container" id="token-help-wrapper">
+    <div class="darkbox" id="token-help">
+        <h1 class="darkbox-title">How do I get my token</h1>
+        <ol>
+            <li>Go to <a target="_blank" href="https://geotastic.net/">Geotastic</a> and log in</li>
+            <li>Open the local storage in your developer tools <br>(Ctrl-Shift-I, then (Application-&gt;)Storage-&gt;Local Storage); search for "token" and copy</li>
+        </ol>
+        <div class="center"><button class="button" id="th-close">Close</button></div>
+    </div>
 </div>
 {%endblock%}
 {%block scripts%}

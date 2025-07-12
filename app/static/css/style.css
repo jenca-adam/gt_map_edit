@@ -358,6 +358,15 @@ html, body{
     width:3em;
     appearance:textfield!important;
 }
+#token-help-wrapper{
+    position:absolute;
+    top:90px;
+    left:0;
+    right:0;
+    bottom:0;
+    background:rgba(0,0,0,0.5);
+    z-index:2;
+}
 #dp-input::-webkit-outer-spin-button,
 #dp-input::-webkit-inner-spin-button {
     appearance: none;
@@ -411,4 +420,15 @@ html, body{
 	font-weight: normal;
 	margin-left: 0.2em;
 	color: #ccc;
+}
+#th-open{
+    background:none;
+    color:#eee;
+    font-weight:bold;
+    border:1px solid #eee;
+    border-radius:50%;
+    width:25px;
+    height:25px;
+    font-size:12pt;
+    cursor:help;
 }
