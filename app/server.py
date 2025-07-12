@@ -4,6 +4,7 @@ import gt_api
 from gt_api.errors import GeotasticAPIError
 import base64
 import json
+import requests
 #from flask_cors import cross_origin
 app = Flask(__name__, static_folder="static")
 
@@ -33,6 +34,8 @@ def gt_proxy(url):
         response = gt_api.generic.process_response(gt_api.generic.geotastic_api_request(url, request.method, token, params=params, **kwargs))
     except GeotasticAPIError as e:
         return {"status":"error", "message":str(e), "response":None}
+    except requests.exceptions.ConnectionError:
+        return {"status":"error", "message":"failed to connect", "response":""}, 503
     return {"status":"ok", "message":"", "response":response}
 @app.route("/view/<string:w>/<path:id>") 
 def view_map(w,id):

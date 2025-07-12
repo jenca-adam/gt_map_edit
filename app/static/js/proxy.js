@@ -18,7 +18,11 @@ const apiRequest = (async (url, method, args) => {
     }
     if (args.data && method == "POST") fetchArgs["body"] = JSON.stringify(args.data);
     const response = await fetch(proxyUrl, fetchArgs);
-    return await response.json();
+    const rjson = await response.json();
+    if(!response.ok){
+        return {"status":"error", "message":`geotastic connection failed: ${response.status} ${rjson.message}`,"response":null};
+    }
+    return await rjson();
 });
 const logIn = async (mail, password, fingerprint) => {
     const response = await apiRequest("/v1/user/login.php", "POST", {
