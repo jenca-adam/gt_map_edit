@@ -4,6 +4,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {%endblock%}
+{%block bannerl%}
+<button id="back-to-map" class="button drops-only">Back to map</button>
+{%endblock%}
 {%block body%}
 <template id="dg-template">
     <div class="dl-item">
@@ -13,7 +16,7 @@
 </template>
 <template id="drop-template">
     <div class="dl-item">
-        <div class="drop"><img class="flag-small drop-image"><span class="drop-name"></span></div>
+        <div class="drop"><img class="flag-small drop-image"><span class="drop-name"></span><span class="drop-desc"></span></div>
     </div>
 </template>
 <div id="site" class="nopad">
@@ -41,14 +44,30 @@
             <div id="mapview-map">
             </div>
             <div id="mapview-ui">
-                <input type="checkbox" id="show-coverage" checked></input>
-                <input type="color" id="marker-color" value="#ff0000"></input>
+                <div class="left">
+                <button class="button"  id="map-settings-button">Map settings</button>
+                </div>
+                <div class="right">
                 <button class="button" id="reset-map">Reset Map</button>
+                <button class="button" id="select-all">Select all</button>
                 <button class="button" id="export-selected">Export selected</button>
+                </div>
+            </div>
+            <div class="darkbox-container" id="map-settings">
+                <div id="map-settings-inner" class="darkbox">
+                    <h1 class="darkbox-title">Map Settings</h1>
+                    <p class="formset"><input type="checkbox" id="show-coverage" checked></input><label for="show-coverage" class="label">Show coverage</label></p>
+                    <p class="formset"><input type="range" id="coverage-opacity" value="1" min="0" max="1" step="0.01"></input><label for="coverage-opacity" class="label">Coverage opacity</label></p>
+                    <p class="formset"><input type="color" id="marker-color" value="#ff0000"></input><label for="marker-color" class="label">Marker color</label></p>
+                    <p class="formset"><input type="range" min="5" max="30" step="0.1" id="marker-size" value="10"></input><label for="marker-size" class="label" >Marker size</p>
+                    <div class="center"><button id="map-settings-hide" class="button">Close</button><button id="map-settings-reset" class="button">Reset</button></div>
+                </div>
             </div>
         </div>
+        
     </div>
 </div>
+
 {%endblock%}
 {%block scripts%}
 <script src="/static/js/core/core.min.js"></script>

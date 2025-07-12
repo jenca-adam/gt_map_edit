@@ -1,3 +1,4 @@
+// SETUP
 const map = L.map('mapview-map', {
     boxZoom: false,
     maxBounds: [
@@ -50,7 +51,6 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     minZoom: 1,
     attribution: '&copy; Google'
 });
-//util
 // MARKER INTERACTION
 function cancelBoxDrag() {
     isDraggingBox = false;
@@ -325,8 +325,9 @@ function _drawMarkers(buf1, l1, buf2, l2, buf3, l3, rgb) {
     var origin = map.getPixelOrigin();
     var zoom = map.getZoom();
     var panpos = map._getMapPanePos();
+    var markerSize = $("#marker-size").val();
     console.log(buf3, l3);
-    core.drawMarkers(buf1, l1, buf2, l2, buf3, l3,  transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, 11.0, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2], 15.0, 0,1,0);
+    core.drawMarkers(buf1, l1, buf2, l2, buf3, l3,  transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, markerSize, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2], markerSize * 1.5, 0,1,0);
 }
 
 function drawMarkers() {
@@ -357,7 +358,32 @@ function mapChanged() {
         drawMarkers()
     }
 }
-
+function mapSettingsChanged(){
+    window.localStorage['mapSettings']=JSON.stringify({"showCoverage":$("#show-coverage").is(":checked"), "coverageOpacity":$("#coverage-opacity").val(), "markerColor":$("#marker-color").val(), "markerSize":$("#marker-size").val()});
+    mapChanged();
+}
+function loadMapSettings(){
+    var ms = window.localStorage['mapSettings'];
+    if(!ms){
+        return;
+    }
+    var mapSettings = JSON.parse(ms);
+    $("#show-coverage").prop("checked",mapSettings.showCoverage);
+    $("#show-coverage").change();
+    $("#coverage-opacity").val(mapSettings.coverageOpacity);
+    $("#coverage-opacity").trigger("input");
+    $("#marker-color").val(mapSettings.markerColor);
+    $("#marker-size").val(mapSettings.markerSize);
+}
+function resetMapSettings(){
+    $("#show-coverage").prop("checked", $("#show-coverage").attr("checked"));
+    $("#show-coverage").change();
+    $("#coverage-opacity").val($("#coverage-opacity").attr("value"));
+    $("#coverage-opacity").trigger("input");
+    $("#marker-color").val($("#marker-color").attr("value"));
+    $("#marker-size").val($("#marker-size").attr("value"));
+    mapSettingsChanged();
+}
 function fboCap() {
     const buf = core.fboCap();
     const width = Math.floor($("#mapview-map").width());
@@ -394,7 +420,7 @@ function getSelectedMarkersJson() {
     a.click();
 
 }
-
+// UI
 $("#export-selected").click(getSelectedMarkersJson);
 map.on("move", mapChanged)
 
@@ -419,13 +445,34 @@ $("#reset-map").click(function() {
         drawMarkers();
     }
 });
-$("#marker-color").change(mapChanged); //it didnt!
+$("#select-all").click(function(){
+    selectedMarkers = new Set(drops.map((d)=>d.id));
+    makeMarkerBuffers();
+    drawMarkers();
+    $("#drop-filter-select").change();
+});
+$("#marker-color").change(mapSettingsChanged);
+$("#marker-size").on('input', mapSettingsChanged);
+$("#map-settings-button").click(function(){
+    $("#map-settings").show();
+});
+$("#map-settings-hide").click(function(){
+    $("#map-settings").hide();
+});
+$("#map-settings-reset").click(function(){
+    resetMapSettings();
+});
 $("#show-coverage").change(function() {
     if ($(this).is(":checked")) {
         coverageLayer.addTo(map);
     } else {
         coverageLayer.removeFrom(map);
     }
+    mapSettingsChanged();
+});
+$("#coverage-opacity").on('input',function(){
+    coverageLayer.setOpacity($(this).val());
+    mapSettingsChanged();
 });
 $(".maps-search-input").keyup(function() {
     var v = $(this).val().toLowerCase();
@@ -473,6 +520,10 @@ $("#dp-plus").click(function(){
         $("#dp-input").change();
     }
 });
+$("#back-to-map").click(function(){
+    location.href=`/view/map/${mapId}`;
+});
+// LOADING
 function loadDrops(d) {
     numPages = Math.max(1, Math.ceil(d.length / pageSize));
     $("#dp-total").text(numPages);
@@ -482,23 +533,30 @@ function loadDrops(d) {
     if (bbox && drops.length) {
         map.fitBounds(bbox);
     }
+
+    $("#loading-flavor").text("Initializing");
     core.waitInitted().then(() => {
         makeMarkerBuffers();
-
-        $("#loading").hide();
+        
+        $("#loading-flavor").text("Loading drops");
         for (var drop of drops) {
             dropsById[drop.id] = drop;
             const clone = dTemplate.content.cloneNode(true);
             $(clone).find(".drop-image").attr("src", "/static/images/flags/svg/" + drop.code + ".svg");
             $(clone).find(".drop-name").text(drop.id);
+            if(drop.title){
+                $(clone).find(".drop-desc").text(`(${drop.title})`);
+            }
             $(clone).find(".drop").attr("data-id", drop.id);
             dropEls[drop.id] = $(clone).find(".dl-item").prop('outerHTML');
         }
         $("#drop-filter-select").change();
         gridMarkers();
-        
         stretchOverlay();
+
+        $("#loading-flavor").text("Drawing drops");
         drawMarkers();
+        $("#loading").hide()
     });
 
 
@@ -506,6 +564,8 @@ function loadDrops(d) {
 
 function loadDropGroups(g) {
     dropGroups = g;
+
+    $("#loading-flavor").text("Loading drop groups");
     for (var dg of dropGroups) {
         const clone = dgTemplate.content.cloneNode(true);
         $(clone).find(".drop-group-image").attr("src", "/static/images/flags/svg/" + dg.code + ".svg");
@@ -513,8 +573,8 @@ function loadDropGroups(g) {
         $(clone).find(".drop-count").text(dg.numberOfDrops);
         $(clone).find(".dl-item").data("id", dg.id);
         $(clone).find(".dl-item").data("name", dg.publicName.toLowerCase());
-        $(clone).find(".drop-group").click(function() {
-            location.href = "/view/group/" + mapId + "/" + $(this).parent().data("id")
+        $(clone).find(".dl-item").click(function() {
+            location.href = "/view/group/" + mapId + "/" + $(this).data("id")
         });
         $("#drop-list").append(clone);
     }
@@ -522,6 +582,8 @@ function loadDropGroups(g) {
 }
 
 function loadSingleMap() {
+
+    $("#loading-flavor").text("Fetching drops");
     getMapDrops(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
             showError("Error while loading map drops: " + response.message, function() {
@@ -534,6 +596,8 @@ function loadSingleMap() {
 }
 
 function loadGroupedMap() {
+
+    $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
@@ -548,6 +612,8 @@ function loadGroupedMap() {
 }
 
 function loadMap() {
+
+    $("#loading-flavor").text("Fetching map info");
     getPlayableMap(localStorage.token, mapId).then((response) => {
         console.log(response);
         if (response.status != "ok") {
@@ -569,6 +635,7 @@ function loadMap() {
 
 function loadGroup() {
     $(".drops-only").show();
+    $("#loading-flavor").text("Fetching group info");
     groupId = Number(urlComponents[4]);
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
@@ -586,6 +653,7 @@ function loadGroup() {
                 });
             } else {
                 $("#map-title").text(groupData.publicName);
+                $("#loading-flavor").text("Fetching drops");
                 getGroupDrops(localStorage.token, groupId).then((response) => {
                     if (response.status != "ok") {
                         showError("Error while loading group drops: " + response.message, function() {
@@ -601,9 +669,9 @@ function loadGroup() {
 
 }
 
-$(document).on("click", ".drop",
+$(document).on("click", ".dl-item:has(.drop)",
     function(ev) {
-        const id = $(this).data("id");
+        const id = $(this).find(".drop").data("id");
         console.log(id);
         const drop = dropsById[id];
         const url = `https://www.google.com/maps/@?api=1&map_action=pano&pano=${drop.panoId}&heading=${drop.heading}&pitch=${drop.pitch}&fov=90`;
@@ -611,12 +679,12 @@ $(document).on("click", ".drop",
 
     }
 );
-$(document).on("auxclick", ".drop",
+$(document).on("auxclick", ".dl-item:has(.drop)",
     function(ev) {
         if (ev.button != 1) return;
         console.log(this.timeout);
         clearTimeout(this.timeout);
-        const id = $(this).data("id");
+        const id = $(this).find(".drop").data("id");
         const drop = dropsById[id];
 
         map.setView([drop.lat, drop.lng],Math.max(map.getZoom(), 12));
@@ -634,7 +702,10 @@ $(document).on("mouseleave", ".dl-item:has(.drop)", function(ev){
 });
 $(document).ready(function() {
     $(".drops-only").hide();
+    $("#map-settings").hide();
+    loadMapSettings();
     dropPage = Number($("#dp-input").val()) - 1;
+    
     if (dropPage == -1) {
         dropPage = 0;
         $("#dp-input").val(1);
