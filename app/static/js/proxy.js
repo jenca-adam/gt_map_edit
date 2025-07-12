@@ -18,11 +18,12 @@ const apiRequest = (async (url, method, args) => {
     }
     if (args.data && method == "POST") fetchArgs["body"] = JSON.stringify(args.data);
     const response = await fetch(proxyUrl, fetchArgs);
+    var rjson
     try{
-        const rjson = await response.json();
+     rjson = await response.json();
     }
     catch{
-        const rjson = {message:""}
+         rjson = {message:""}
     }
     if(!response.ok){
         return {"status":"error", "message":`geotastic connection failed: ${response.status} ${rjson.message}`,"response":null};
