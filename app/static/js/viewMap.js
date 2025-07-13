@@ -215,6 +215,7 @@ function boxSelect(x1, y1, x2, y2) {
         makeMarkerBuffers();
         drawMarkers();
     }
+    core.destroyBuffer(idBuffer);
 }
 
 function compareColors(rgb1, rgb2) {
