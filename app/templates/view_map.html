@@ -44,14 +44,24 @@
             <div id="mapview-map">
             </div>
             <div id="mapview-ui">
+                <div class="top">
+                <div class="right">
+                    <input type="radio" checked name="mode" class="chbox-check ui-item" id="map-mode-view"></input><label for="map-mode-view" class="chbox-label ui-item">V</label>
+                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-edit"></input><label for="map-mode-edit" class="chbox-label ui-item">E</label>
+                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-insert"></input><label for="map-mode-insert" class="chbox-label ui-item">I</label>
+                </div>
+                </div>
+                <div class="bottom">
                 <div class="left">
-                <button class="button"  id="map-settings-button">Map settings</button>
+                <button class="button ui-item"  id="map-settings-button">Map settings</button>
                 </div>
                 <div class="right">
-                <button class="button" id="reset-map">Reset Map</button>
-                <button class="button" id="select-all">Select all</button>
-                <button class="button" id="export-selected">Export selected</button>
+                <button class="button ui-item" id="reset-map">Reset Map</button>
+                <button class="button ui-item" id="select-all">Select all</button>
+                <button class="button ui-item" id="export-selected">Export selected</button>
                 </div>
+                </div>
+                
             </div>
             <div class="darkbox-container" id="map-settings">
                 <div id="map-settings-inner" class="darkbox">

@@ -143,22 +143,42 @@ html, body{
 .map-ov-item{
     margin: 5px 0;
 }
-.button{
+.chbox-check{
+    clip:rect(0,0,0,0);
+    position:absolute;
+    pointer-events:none;
+}
+.button, .chbox-label{
     background: #5a5;
     color: #eee;
     appearance: none;
     border: none;
-    padding: 0.5em 2em;
     border-radius: 3px;
     text-transform: uppercase;
     font-weight: bold;
     font-family: "Roboto";
     cursor:pointer;
     border: 2px solid #5a5;
+    transition:0.1s ease;
 }
-.button:hover{
+.chbox-check:checked+.chbox-label{
     background: #eee;
     color:#5a5;
+}
+.chbox-label{
+    width: 1.25em;
+    height: 1.25em;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.button{
+    padding: 0.5em 2em;
+}
+.button:hover, .chbox-label:hover{
+    background: #7c7;
+    color:#fff;
+    border-color: #7c7;
 }
 .darkbox-container{
     flex:1;
@@ -229,10 +249,17 @@ html, body{
     display:flex;
     padding:2em;
     z-index:3;
-    align-items:center;
+    flex-direction: column;
+    top: 0;
+    justify-content: space-between;
+    pointer-events: none;
 }
-#mapview-ui *{
+#mapview-ui>*{
     align-items:center;
+    display:flex;
+}
+#mapview-ui .ui-item{
+    pointer-events: auto!important;
 }
 #mapview{
     display:flex;
