@@ -139,7 +139,7 @@ $("#mapview-map").mousemove(function(ev) {
     }
 });
 $("#mapview-map").mouseup(function(ev) {
-    if ($("#map-mode-create").is(":checked")&&drops) {
+    if ($("#map-mode-create").is(":checked") && drops) {
         if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
             return;
         }
@@ -153,6 +153,7 @@ $("#mapview-map").mouseup(function(ev) {
                     drops.push(drop);
                     dropsById[drop.id] = drop;
                     dropEls[drop.id] = createDropElement(drop);
+                    selectedMarkers.add(drop.id);
                     loadMarkers([drop]);
                     makeMarkerBuffers();
                     drawMarkers();
@@ -503,17 +504,16 @@ function saveMap() {
             if (response.status != "ok") {
                 showError(response.message, () => {});
             }
-            remoteDrops=drops; 
+            remoteDrops = drops;
         });
     }
     if (mapUpdateData.add.length) {
         var targetId = dgOrMap == "map" ? mapId : groupId;
         importDrops(localStorage.token, mapUpdateData.add, targetId, dgOrMap, "merge").then((response) => {
-             
+
             if (response.status != "ok") {
                 showError(response.message, () => {});
-            }
-            else{
+            } else {
                 location.reload(); // super scuffed (need the new ids and i don't feel like writing 10000 lines of repeated code)
             }
         });
@@ -721,7 +721,9 @@ function loadSingleMap() {
 }
 
 function loadGroupedMap() {
-    $("#save-map").hide(); $("#deleted-selected").hide(); $("#map-modes").hide();
+    $("#save-map").hide();
+    $("#deleted-selected").hide();
+    $("#map-modes").hide();
     $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
