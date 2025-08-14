@@ -125,3 +125,23 @@ const reverseBatch = async (latlngs) => {
         }
     });
 };
+const deleteDrops = async (token, dropIds) => {
+    return await apiRequest("/v1/maps/deleteDrops.php", "POST", {
+        "token": token,
+        "data": dropIds,
+    });
+};
+
+const importDrops = async (token, drops, targetId, targetType, importType) => {
+    return await apiRequest("/v1/drops/importDrops.php", "POST", {
+        "token": token,
+        "data": {
+            "drops": drops,
+            "params": {
+                "targetId": targetId,
+                "targetType": targetType,
+                "importType": importType
+            }
+        }
+    })
+};

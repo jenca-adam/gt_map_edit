@@ -30,6 +30,9 @@ const requestPanorama = (async (lat, lng, radius, thirdParty) => {
             dropData.code = reverseResult.response[0].iso2 || "";
             dropData.subCode = reverseResult.response[0].childIso2 || "";
         }
+        return dropData;
     }
-    return dropData;
+    else{
+        return null;
+    }
 });

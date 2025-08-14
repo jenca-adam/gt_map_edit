@@ -43,6 +43,7 @@ var groupData;
 var dropPage;
 var numPages;
 var filteredDrops;
+var remoteDrops;
 var hoveredMarker = null;
 var hoveredMarkerBuffer = 0;
 var minUsedId = 0x7FFFFFF; // avoid signed/unsigned problems
@@ -482,6 +483,41 @@ function getSelectedMarkersJson() {
     a.href = URL.createObjectURL(blob);
     a.download = 'drops.json';
     a.click();
+}
+
+function getMapUpdateData() {
+    var remoteDropsSet = new Set(remoteDrops);
+    var dropsSet = new Set(drops);
+    var removed = remoteDropsSet.difference(dropsSet).values().map(drop => drop.id).toArray();
+    var added = dropsSet.difference(remoteDropsSet).values().toArray();
+    return {
+        add: added,
+        remove: removed
+    };
+}
+
+function saveMap() {
+    const mapUpdateData = getMapUpdateData();
+    if (mapUpdateData.remove.length) {
+        deleteDrops(localStorage.token, mapUpdateData.remove).then((response) => {
+            if (response.status != "ok") {
+                showError(response.message, () => {});
+            }
+            remoteDrops=drops; 
+        });
+    }
+    if (mapUpdateData.add.length) {
+        var targetId = dgOrMap == "map" ? mapId : groupId;
+        importDrops(localStorage.token, mapUpdateData.add, targetId, dgOrMap, "merge").then((response) => {
+             
+            if (response.status != "ok") {
+                showError(response.message, () => {});
+            }
+            else{
+                location.reload(); // super scuffed (need the new ids and i don't feel like writing 10000 lines of repeated code)
+            }
+        });
+    }
 
 }
 // UI
@@ -527,6 +563,7 @@ $("#select-all").click(function() {
 });
 $("#marker-color").change(mapSettingsChanged);
 $("#marker-size").on('input', mapSettingsChanged);
+$("#save-map").click(saveMap);
 $("#map-settings-button").click(function() {
     $("#map-settings").show();
 });
@@ -623,6 +660,7 @@ function loadDrops(d) {
     $("#dp-total").text(numPages);
     $("#dp-input").attr("max", numPages);
     drops = d;
+    remoteDrops = d.slice();
     bbox = getBbox(drops);
     if (bbox && drops.length) {
         map.fitBounds(bbox);
