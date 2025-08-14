@@ -114,7 +114,7 @@ void print_grid() {
     if (ml)
       printf("TILE %d:\n", i);
     while (ml) {
-      printf("    %f %f\n", ml->m.x, ml->m.y);
+      printf("    %f %f %d\n", ml->m.x, ml->m.y, ml->m.id);
       ml = ml->next;
     }
   }
@@ -262,6 +262,7 @@ unsigned int box_select(float x1, float y1, float x2, float y2,
       while (ml) {
         marker m = ml->m;
         if (m.x > x1 && m.x < x2 && m.y > y1 && m.y < y2) {
+          printf("SELECT %d\n", m.id);
           id_buffer[buffer_index] = m.id;
           buffer_index++;
         }

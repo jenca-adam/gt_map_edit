@@ -139,7 +139,7 @@ $("#mapview-map").mousemove(function(ev) {
     }
 });
 $("#mapview-map").mouseup(function(ev) {
-    if ($("#map-mode-create").is(":checked")) {
+    if ($("#map-mode-create").is(":checked")&&drops) {
         if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
             return;
         }
@@ -336,7 +336,7 @@ function loadMarkers(updated = drops) {
     var projectResult = projectMarkers(updatedBuffer, updatedPositions.length, 1.0);
     var projectedUpdatedBuffer = projectResult[0];
     Module.HEAPU32.set(markerIds, markerIdBuffer / Uint32Array.BYTES_PER_ELEMENT);
-    core.loadMarkers(projectedUpdatedBuffer, markerIdBuffer, markerPositions.length, 0.01);
+    core.loadMarkers(projectedUpdatedBuffer, markerIdBuffer, updatedPositions.length, 0.01);
     core.destroyBuffer(markerIdBuffer);
     core.destroyBuffer(projectedUpdatedBuffer);
     core.destroyBuffer(updatedBuffer);
@@ -721,7 +721,7 @@ function loadSingleMap() {
 }
 
 function loadGroupedMap() {
-
+    $("#save-map").hide(); $("#deleted-selected").hide(); $("#map-modes").hide();
     $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
