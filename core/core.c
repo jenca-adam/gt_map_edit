@@ -153,10 +153,8 @@ void load_markers(float *xys, unsigned int *ids, int num,
   }
 }
 void unload_markers(float *xys, unsigned int *ids, int num) {
-  printf("UNLOAD\n");
   for (int i = 0; i < num; i += 2) {
     unsigned int id = ids[i / 2];
-    printf("TRY %d\n", id);
     float x = xys[i];
     float y = xys[i + 1];
     int x_tile = x / g.res;
@@ -166,7 +164,6 @@ void unload_markers(float *xys, unsigned int *ids, int num) {
     marker_list *prev = NULL;
     while (ml) {
       if (ml->m.id == id) {
-        printf("REMOVING %d\n", ml->m.id);
         // remove item
         if (prev) {
           prev->next = ml->next;
@@ -201,9 +198,6 @@ unsigned int is_on_marker(int x, int y) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, col);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  if (*(unsigned int *)col) {
-    printf("%d %d %d %d\n", col[0], col[1], col[2], col[3]);
-  };
   return *(unsigned int *)col;
 }
 GLubyte *fbo_cap() {
@@ -222,7 +216,6 @@ unsigned int closest_marker(float x, float y, float mindist) {
   float closest_distance = mindist;
   int closest_id = 0;
   marker *closest_marker = NULL;
-  printf("%f %f TILE %d\n", x, y, g.width * center_y + center_x);
   for (int lx = center_x - 1; lx <= center_x + 1; lx++) {
     for (int ly = center_y - 1; ly <= center_y + 1; ly++) {
       if (lx < 0 || lx > g.width || ly < 0 || ly > g.height)
@@ -239,7 +232,6 @@ unsigned int closest_marker(float x, float y, float mindist) {
       }
     }
   }
-  printf("DISTANCE %f\n", closest_distance);
   int width, height;
   emscripten_get_canvas_element_size("#overlay", &width, &height);
 
@@ -262,7 +254,6 @@ unsigned int box_select(float x1, float y1, float x2, float y2,
       while (ml) {
         marker m = ml->m;
         if (m.x > x1 && m.x < x2 && m.y > y1 && m.y < y2) {
-          printf("SELECT %d\n", m.id);
           id_buffer[buffer_index] = m.id;
           buffer_index++;
         }
@@ -372,7 +363,6 @@ int init() {
   GLuint point_vs = LoadShader(GL_VERTEX_SHADER, point_vs_src);
   GLuint point_fs = LoadShader(GL_FRAGMENT_SHADER, point_fs_src);
   program_object = glCreateProgram();
-  printf("%d %d %d\n", point_vs, point_fs, program_object);
   if (!program_object | !point_vs | !point_fs) {
     return -1;
   }
@@ -430,7 +420,6 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys,
   GLuint posobj = 0, sposobj = 0, hposobj = 0;
   int w, h;
   emscripten_get_canvas_element_size("#overlay", &w, &h);
-  printf("%d %f\n", snum, sxys[0]);
   if (snum) {
     glGenBuffers(1, &sposobj);
     glBindBuffer(GL_ARRAY_BUFFER, sposobj);

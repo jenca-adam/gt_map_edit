@@ -79,7 +79,6 @@ $("#mapview-map").mousedown(function(ev) {
 
         boxStart = map.mouseEventToLayerPoint(ev);
         L.DomUtil.disableTextSelection();
-        console.log(map._panes.overlayPane);
         box = L.DomUtil.create('div', 'zoom-box', map._panes.overlayPane);
         box.style.position = 'absolute';
         box.style.border = '2px dashed #38f';
@@ -128,7 +127,6 @@ $("#mapview-map").mousemove(function(ev) {
     var alpha = (s >> 24) & 255;
 
     if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor)) && alpha) {
-        console.log(x, $("#mapview-map").height() - y)
         $("#mapview-map").css({
             "cursor": "pointer"
         });
@@ -151,6 +149,7 @@ $("#mapview-map").mouseup(function(ev) {
                     drop.id = minUsedId - 1; // big ids to avoid collision with existing drops, ids get ignored(?) when importing with merge 
                     minUsedId -= 1;
                     drops.push(drop);
+                    bbox = getBbox(drops);
                     dropsById[drop.id] = drop;
                     dropEls[drop.id] = createDropElement(drop);
                     selectedMarkers.add(drop.id);
@@ -183,7 +182,6 @@ $("#mapview-map").mouseup(function(ev) {
                 boxEnd = null;
             }
         }
-        console.log(dragStartPos, ev.clientX, ev.clientY);
         if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
             return;
         }
@@ -196,20 +194,16 @@ $("#mapview-map").mouseup(function(ev) {
         var screencolor = [(s & 255), ((s >> 8) & 255), ((s >> 16) & 255)];
 
         var alpha = (s >> 24) & 255;
-        console.log(screencolor);
 
         var ll = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
 
         var xy = projectSingle(ll.lat, ll.lng, 1);
-        console.log("M", ll.lat, ll.lng, xy);
 
         if ((compareColors(screencolor, color) || compareColors(screencolor, invcolor)) && alpha) {
             var ll = map.containerPointToLatLng(L.point(ev.clientX - offset.left, ev.clientY - offset.top), map.getZoom())
 
             var xy = projectSingle(ll.lat, ll.lng, 1);
-            console.log("M", ll.lat, ll.lng, xy);
             var drop = core.closestMarker(xy[0], xy[1], Infinity);
-            console.log(drop, xy);
             if (!ev.shiftKey) {
                 selectedMarkers.clear();
             }
@@ -233,11 +227,9 @@ $("#mapview-map").mouseup(function(ev) {
 
 // utils
 function boxSelect(x1, y1, x2, y2) {
-    console.log(x1, y1, x2, y2);
     const idBuffer = core.createUintBuffer(drops.length);
     const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
     const dropIds = Module.HEAPU32.slice(idBuffer / Uint32Array.BYTES_PER_ELEMENT, idBuffer / Uint32Array.BYTES_PER_ELEMENT + numDrops);
-    console.log(dropIds);
     dropIds.forEach((d) => {
         selectedMarkers.add(d)
     });
@@ -278,7 +270,6 @@ function getBbox() {
         bbox[1][0] = Math.max(bbox[1][0], drop.lat);
         bbox[1][1] = Math.max(bbox[1][1], drop.lng);
     }
-    console.log(bbox);
     return bbox;
 }
 
@@ -383,13 +374,11 @@ function _drawMarkers(buf1, l1, buf2, l2, buf3, l3, rgb) {
     var zoom = map.getZoom();
     var panpos = map._getMapPanePos();
     var markerSize = $("#marker-size").val();
-    console.log(buf3, l3);
     core.drawMarkers(buf1, l1, buf2, l2, buf3, l3, transform._a, transform._b, transform._c, transform._d, origin.x - panpos.x, origin.y - panpos.y, zoom, markerSize, rgb[0], rgb[1], rgb[2], 1 - rgb[0], 1 - rgb[1], 1 - rgb[2], markerSize * 1.5, 0, 1, 0);
 }
 
 function drawMarkers() {
     if (!markerPositions) return;
-    console.log(map.options.crs.transformation);
     core.clearScreen(0, 0, 0, 0);
     /*var markerPositions = new Float32Array(drops.map((drop) => {
         var pt = map.latLngToContainerPoint(L.latLng(drop.lat, drop.lng));
@@ -466,7 +455,6 @@ function fboCap() {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     const imageData = ctx.createImageData(width, height);
-    console.log(pixels, imageData.data);
     imageData.data.set(flipped);
     ctx.putImageData(imageData, 0, 0);
     canvas.toBlob(function(blob) {
@@ -539,9 +527,9 @@ map.on("resize", function() {
 });
 $("#delete-selected").click(function() {
     var selectedDrops = selectedMarkers.values().toArray().map((id) => dropsById[id]);
-    console.log(selectedDrops);
     unloadMarkers(selectedDrops);
     drops = drops.filter((drop) => (!selectedMarkers.has(drop.id)));
+    bbox = getBbox(drops);
     selectedMarkers.clear();
     makeMarkerBuffers();
     drawMarkers();
@@ -603,7 +591,6 @@ $("#dp-input").on("keyup change", function() {
     }
 });
 $("#drop-filter-select").on("change", function() {
-    console.log($(this).val());
     if ($(this).val() == "Selected") {
         filteredDrops = drops.filter((d) => selectedMarkers.has(d.id));
     } else {
@@ -617,7 +604,6 @@ $("#drop-filter-select").on("change", function() {
 });
 $("#dp-minus").click(function() {
     var val = Number($("#dp-input").val());
-    console.log(val);
     if (val > 1) {
         $("#dp-input").val(val - 1);
         $("#dp-input").change();
@@ -625,7 +611,6 @@ $("#dp-minus").click(function() {
 });
 $("#dp-plus").click(function() {
     var val = Number($("#dp-input").val());
-    console.log(val, numPages);
     if (val < numPages) {
         $("#dp-input").val(val + 1);
         $("#dp-input").change();
@@ -742,7 +727,6 @@ function loadMap() {
 
     $("#loading-flavor").text("Fetching map info");
     getPlayableMap(localStorage.token, mapId).then((response) => {
-        console.log(response);
         if (response.status != "ok") {
             showError("Error while loading map data: " + response.message, function() {
                 location.href = "/"
@@ -799,7 +783,6 @@ function loadGroup() {
 $(document).on("click", ".dl-item:has(.drop)",
     function(ev) {
         const id = $(this).find(".drop").data("id");
-        console.log(id);
         const drop = dropsById[id];
         const url = `https://www.google.com/maps/@?api=1&map_action=pano&pano=${drop.panoId}&heading=${drop.heading}&pitch=${drop.pitch}&fov=90`;
         window.open(url);
@@ -809,7 +792,6 @@ $(document).on("click", ".dl-item:has(.drop)",
 $(document).on("auxclick", ".dl-item:has(.drop)",
     function(ev) {
         if (ev.button != 1) return;
-        console.log(this.timeout);
         clearTimeout(this.timeout);
         const id = $(this).find(".drop").data("id");
         const drop = dropsById[id];
@@ -822,7 +804,6 @@ $(document).on("mouseenter", ".dl-item:has(.drop)", function(ev) {
     drawMarkers();
 });
 $(document).on("mouseleave", ".dl-item:has(.drop)", function(ev) {
-    console.log(hoveredMarker);
     hoveredMarker = null;
     makeMarkerBuffers();
     drawMarkers();
