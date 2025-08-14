@@ -42,7 +42,6 @@ GLuint program_object;
 GLuint fbo = 0, fbo_tex = 0;
 grid g;
 
-
 // i have no idea what i'm doing
 GLuint LoadShader(GLenum type, const char *shaderSrc) {
   GLuint shader;
@@ -153,35 +152,34 @@ void load_markers(float *xys, unsigned int *ids, int num,
     g.g[grid_space] = new;
   }
 }
-void unload_markers(float *xys, unsigned int *ids, int num){
-    printf("UNLOAD\n");
-    for (int i = 0; i < num; i += 2) {
-        unsigned int id = ids[i/2];
-        printf("TRY %d\n", id);
-        float x = xys[i];
-        float y = xys[i + 1];
-        int x_tile = x / g.res;
-        int y_tile = y / g.res;
-        int grid_space = g.width * y_tile + x_tile;
-        marker_list *ml = g.g[grid_space];
-        marker_list *prev = NULL;
-        while(ml){
-            if (ml->m.id==id){
-                printf("REMOVING %d\n", ml->m.id);
-                //remove item
-                if(prev){
-                    prev->next= ml->next;
-                }
-                else{
-                    g.g[grid_space]=ml->next;
-                }
-                free(ml);
-                break;
-            }
-            prev=ml;
-            ml=ml->next;
+void unload_markers(float *xys, unsigned int *ids, int num) {
+  printf("UNLOAD\n");
+  for (int i = 0; i < num; i += 2) {
+    unsigned int id = ids[i / 2];
+    printf("TRY %d\n", id);
+    float x = xys[i];
+    float y = xys[i + 1];
+    int x_tile = x / g.res;
+    int y_tile = y / g.res;
+    int grid_space = g.width * y_tile + x_tile;
+    marker_list *ml = g.g[grid_space];
+    marker_list *prev = NULL;
+    while (ml) {
+      if (ml->m.id == id) {
+        printf("REMOVING %d\n", ml->m.id);
+        // remove item
+        if (prev) {
+          prev->next = ml->next;
+        } else {
+          g.g[grid_space] = ml->next;
         }
+        free(ml);
+        break;
+      }
+      prev = ml;
+      ml = ml->next;
     }
+  }
 }
 float earth_distance(float lat1, float lng1, float lat2, float lng2) {
   float r = 6378137.0;
@@ -203,20 +201,20 @@ unsigned int is_on_marker(int x, int y) {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, col);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  if(*(unsigned int*)col){
+  if (*(unsigned int *)col) {
     printf("%d %d %d %d\n", col[0], col[1], col[2], col[3]);
   };
   return *(unsigned int *)col;
 }
-GLubyte *fbo_cap(){
+GLubyte *fbo_cap() {
   int width, height;
   emscripten_get_canvas_element_size("#overlay", &width, &height);
 
-    glFlush();
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    GLubyte *col = malloc(4*width*height);
-    glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, col);
-    return col;
+  glFlush();
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLubyte *col = malloc(4 * width * height);
+  glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, col);
+  return col;
 }
 unsigned int closest_marker(float x, float y, float mindist) {
   int center_x = x / g.res;
@@ -363,11 +361,11 @@ int init() {
       "float d =  distance(position, mcenter);\n"
       "if(d<=msize*0.5){\n" // circles
       "color=vec4(marker_color, 1.0);\n"
-      "if(msize*0.5-d<=1.0){\n" //border
-      "color=vec4(0.0, 0.0, 0.0, 1.0);"  
+      "if(msize*0.5-d<=1.0){\n" // border
+      "color=vec4(0.0, 0.0, 0.0, 1.0);"
       "}}\n"
       "else {discard;}\n"
-       "}\n";
+      "}\n";
   emscripten_webgl_make_context_current(ctx);
   stretch();
   GLuint point_vs = LoadShader(GL_VERTEX_SHADER, point_vs_src);
@@ -422,11 +420,13 @@ unsigned int *create_uint_buffer(int num) {
   return (unsigned int *)malloc(num * sizeof(unsigned int));
 }
 void destroy_buffer(void *buf) { free(buf); }
-void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys, int hnum, GLfloat tx,
-                  GLfloat ty, GLfloat tz, GLfloat tw, GLfloat ox, GLfloat oy,
-                  GLfloat zoom, GLfloat size, GLfloat cr, GLfloat cg,
-                  GLfloat cb, GLfloat scr, GLfloat scg, GLfloat scb, GLfloat hsize, GLfloat hcr, GLfloat hcg, GLfloat hcb) {
-  GLuint posobj = 0, sposobj = 0, hposobj=0;
+void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys,
+                  int hnum, GLfloat tx, GLfloat ty, GLfloat tz, GLfloat tw,
+                  GLfloat ox, GLfloat oy, GLfloat zoom, GLfloat size,
+                  GLfloat cr, GLfloat cg, GLfloat cb, GLfloat scr, GLfloat scg,
+                  GLfloat scb, GLfloat hsize, GLfloat hcr, GLfloat hcg,
+                  GLfloat hcb) {
+  GLuint posobj = 0, sposobj = 0, hposobj = 0;
   int w, h;
   emscripten_get_canvas_element_size("#overlay", &w, &h);
   printf("%d %f\n", snum, sxys[0]);
@@ -437,7 +437,7 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys,
     glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(0);
   }
-    if (hnum) {
+  if (hnum) {
     glGenBuffers(1, &hposobj);
     glBindBuffer(GL_ARRAY_BUFFER, hposobj);
     glBufferData(GL_ARRAY_BUFFER, hnum * sizeof(GLfloat), hxys, GL_STATIC_DRAW);
@@ -511,7 +511,7 @@ void draw_markers(GLfloat *xys, int num, GLfloat *sxys, int snum, GLfloat *hxys,
     glDrawArrays(GL_POINTS, 0, snum / 2);
     glDeleteBuffers(1, &sposobj);
   }
-if (hposobj) {
+  if (hposobj) {
     glBindBuffer(GL_ARRAY_BUFFER, hposobj);
     glVertexAttribPointer(0, 2, GL_FLOAT, 0, 0, 0);
     glEnableVertexAttribArray(0);

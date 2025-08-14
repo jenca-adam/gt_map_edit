@@ -69,11 +69,13 @@ $("#form-token").submit((ev) => {
         return false;
     }
 });
-$("#th-open").click(function(ev){
+$("#th-open").click(function(ev) {
     ev.preventDefault();
 
     $("#token-help-wrapper").show();
     return false;
 });
 $("#token-help-wrapper").hide();
-$("#th-close").click(function(){$("#token-help-wrapper").hide()});
+$("#th-close").click(function() {
+    $("#token-help-wrapper").hide()
+});

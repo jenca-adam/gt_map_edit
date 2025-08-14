@@ -14,34 +14,33 @@
             <p class="map-num-plays-outer map-ov-item"><span class="map-num-plays"></span><span>&nbsp;plays<span></p>
             <div class="map-select-container"><button class="map-select button"></button></div>
         </div>
-            </div>
+    </div>
 </template>
 <div id="site">
-<h1> Choose a map to view/edit </h1>
-<div class="tabs">
-    <div class="tablist">
-        <button data-tab="tab-own" class="tab-button">Own maps</button>
-        <button data-tab="tab-other" class="tab-button">Other maps</button>
-    </div>
-    <div class="tab active own" data-tab="tab-own">
-        <div class="loading"> <img id="loading-image" src="/static/images/loading.webp" width="100"></div>
-        <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
-        <div class="map-list">
+    <h1> Choose a map to view/edit </h1>
+    <div class="tabs">
+        <div class="tablist">
+            <button data-tab="tab-own" class="tab-button">Own maps</button>
+            <button data-tab="tab-other" class="tab-button">Other maps</button>
         </div>
-    </div>
-    <div class="tab other" data-tab="tab-other">
-        <div class="loading"> <img id="loading-image" src="/static/images/loading.webp" width="100"></div>
-        <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
-        <div class="map-list">
-        
+        <div class="tab active own" data-tab="tab-own">
+            <div class="loading"> <img id="loading-image" src="/static/images/loading.webp" width="100"></div>
+            <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+            <div class="map-list">
+            </div>
         </div>
-        
-    </div>
-</div>
-{%endblock%}
-{%block scripts%}
-<script src="/static/js/tabs.js"></script>
-<script src="/static/js/proxy.js"></script>
-<script src="/static/js/index.js"></script>
-{%endblock%}
+        <div class="tab other" data-tab="tab-other">
+            <div class="loading"> <img id="loading-image" src="/static/images/loading.webp" width="100"></div>
+            <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+            <div class="map-list">
 
+            </div>
+
+        </div>
+    </div>
+    {%endblock%}
+    {%block scripts%}
+    <script src="/static/js/tabs.js"></script>
+    <script src="/static/js/proxy.js"></script>
+    <script src="/static/js/index.js"></script>
+    {%endblock%}

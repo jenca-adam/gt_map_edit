@@ -1,45 +1,46 @@
 <!doctype html>
 <html>
-	<head>
-		<title>{%block title%}{%endblock%} - GT Map Editor</title>
-		<meta charset="utf-8">
-                <link rel="preconnect" href="https://fonts.googleapis.com">
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-                <link rel="stylesheet" href="/static/css/style.css">
-		{%block head%}
-		{%endblock%}
-	</head>
-	<body>
-                <div id="app">
-                <div id="banner">
-                    <div class="banner-items left">{%block bannerl%}{%endblock%}</div>
-                <div class="banner-items center"><a class="title" href="/">GT Map Editor</a></div>
-                <div class="banner-items right">{%block bannerr%}{%endblock%}<button id="logout" class="button">Log Out</button></div>
-                </div>
-		{%block body%}
-		{%endblock%}
-                </div>
-                <div id="loading">
-                    <img src="/static/images/loading.webp" width="100" id="loading-image">
-                    <div id="loading-flavor">Loading</div>
-                </div>
-                <div id="error-box-container">
-                    <div id="error-box">
-                        <h2 id="error-box-title">Error</h2>
-                        <div id="error-box-content"></div>
-                        <div id="error-box-bottom"><button id="error-box-button" class="button">Ok</button></div>
-                    </div>
-                </div>
 
-		<script src="/static/js/jquery.min.js"></script>
-                <script src="/static/js/errorBox.js"></script>
-                <script src="/static/js/logout.js"></script>
-                <script src="//code.iconify.design/1/1.0.6/iconify.min.js"></script>
-		{%block scripts%}
+<head>
+    <title>{%block title%}{%endblock%} - GT Map Editor</title>
+    <meta charset="utf-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    {%block head%}
+    {%endblock%}
+</head>
 
-		{%endblock%}
-	</body>
+<body>
+    <div id="app">
+        <div id="banner">
+            <div class="banner-items left">{%block bannerl%}{%endblock%}</div>
+            <div class="banner-items center"><a class="title" href="/">GT Map Editor</a></div>
+            <div class="banner-items right">{%block bannerr%}{%endblock%}<button id="logout" class="button">Log Out</button></div>
+        </div>
+        {%block body%}
+        {%endblock%}
+    </div>
+    <div id="loading">
+        <img src="/static/images/loading.webp" width="100" id="loading-image">
+        <div id="loading-flavor">Loading</div>
+    </div>
+    <div id="error-box-container">
+        <div id="error-box">
+            <h2 id="error-box-title">Error</h2>
+            <div id="error-box-content"></div>
+            <div id="error-box-bottom"><button id="error-box-button" class="button">Ok</button></div>
+        </div>
+    </div>
+
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/errorBox.js"></script>
+    <script src="/static/js/logout.js"></script>
+    <script src="//code.iconify.design/1/1.0.6/iconify.min.js"></script>
+    {%block scripts%}
+
+    {%endblock%}
+</body>
+
 </html>
-
-
