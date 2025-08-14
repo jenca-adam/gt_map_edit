@@ -36,7 +36,8 @@
             </div>
             <div class="paginator drops-only" id="drop-paginator">
                 <div>
-                    Showing page&nbsp;<input type="number" id="dp-input" value="1" min="1"></input>&nbsp;of&nbsp;<span id="dp-total"></span></div><div id="dp-arrows"><button class="dp-arrow" id="dp-minus">&lt;</button><button class="dp-arrow" id="dp-plus">&gt;</button></div>
+                    Showing page&nbsp;<input type="number" id="dp-input" value="1" min="1"></input>&nbsp;of&nbsp;<span id="dp-total"></span></div>
+                <div id="dp-arrows"><button class="dp-arrow" id="dp-minus">&lt;</button><button class="dp-arrow" id="dp-plus">&gt;</button></div>
             </div>
         </div>
         <div id="mapview" class="panel">
@@ -45,25 +46,26 @@
             </div>
             <div id="mapview-ui">
                 <div class="top">
-                <div class="right" id="map-radios">
-                    <div class="right row" id="map-modes">
-                    <input type="radio" checked name="mode" class="chbox-check ui-item" id="map-mode-view"></input><label for="map-mode-view" class="chbox-label ui-item">V</label>
-                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-edit"></input><label for="map-mode-edit" class="chbox-label ui-item">E</label>
-                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-create"></input><label for="map-mode-create" class="chbox-label ui-item">C</label>
+                    <div class="right" id="map-radios">
+                        <div class="right row" id="map-modes">
+                            <input type="radio" checked name="mode" class="chbox-check ui-item" id="map-mode-view"></input><label for="map-mode-view" class="chbox-label ui-item"><span class="iconify" data-icon="mdi-eye-outline"></span></label>
+                            <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-edit"></input><label for="map-mode-edit" class="chbox-label ui-item"><span class="iconify" data-icon="mdi-pencil"></span></label>
+                            <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-create"></input><label for="map-mode-create" class="chbox-label ui-item"><span class="iconify" data-icon="mdi-plus"></span></label>
+                        </div>
                     </div>
                 </div>
-                </div>
                 <div class="bottom">
-                <div class="left">
-                <button class="button ui-item"  id="map-settings-button">Map settings</button>
+                    <div class="left">
+                        <button class="button ui-item" id="map-settings-button"><span class="iconify" data-icon="mdi-cog"></span></button>
+                    </div>
+                    <div class="right">
+                        <button class="button ui-item edit-mode" id="delete-selected"><span class="iconify" data-icon="mdi-delete"></span></button>
+                        <button class="button ui-item" id="reset-map"><span class="iconify" data-icon="mdi-crosshairs-gps"></span></button>
+                        <button class="button ui-item" id="select-all"><span class="iconify" data-icon="mdi-select-all"></span></button>
+                        <button class="button ui-item" id="export-selected"><span class="iconify" data-icon="mdi-export"></span></button>
+                    </div>
                 </div>
-                <div class="right">
-                <button class="button ui-item" id="reset-map">Reset Map</button>
-                <button class="button ui-item" id="select-all">Select all</button>
-                <button class="button ui-item" id="export-selected">Export selected</button>
-                </div>
-                </div>
-                
+
             </div>
             <div class="darkbox-container" id="map-settings">
                 <div id="map-settings-inner" class="darkbox">
@@ -71,12 +73,12 @@
                     <p class="formset"><input type="checkbox" id="show-coverage" checked></input><label for="show-coverage" class="label">Show coverage</label></p>
                     <p class="formset"><input type="range" id="coverage-opacity" value="1" min="0" max="1" step="0.01"></input><label for="coverage-opacity" class="label">Coverage opacity</label></p>
                     <p class="formset"><input type="color" id="marker-color" value="#ff0000"></input><label for="marker-color" class="label">Marker color</label></p>
-                    <p class="formset"><input type="range" min="5" max="30" step="0.1" id="marker-size" value="10"></input><label for="marker-size" class="label" >Marker size</p>
+                    <p class="formset"><input type="range" min="5" max="30" step="0.1" id="marker-size" value="10"></input><label for="marker-size" class="label">Marker size</p>
                     <div class="center"><button id="map-settings-hide" class="button">Close</button><button id="map-settings-reset" class="button">Reset</button></div>
                 </div>
             </div>
         </div>
-        
+
     </div>
 </div>
 

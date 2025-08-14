@@ -26,6 +26,7 @@ const core = {
     destroyBuffer: Module.cwrap("destroy_buffer", "", ["number"]),
     stretch: Module.cwrap("stretch", "", []),
     loadMarkers: Module.cwrap("load_markers", "", ["number", "number", "number", "float"]),
+    unloadMarkers: Module.cwrap("unload_markers", "", ["number", "number", "number"]),
     closestMarker: Module.cwrap("closest_marker", "number", ["float", "float", "float"]),
     isOnMarker: Module.cwrap("is_on_marker", "number", ["number", "number"]),
     boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"]),

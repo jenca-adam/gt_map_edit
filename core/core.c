@@ -153,6 +153,36 @@ void load_markers(float *xys, unsigned int *ids, int num,
     g.g[grid_space] = new;
   }
 }
+void unload_markers(float *xys, unsigned int *ids, int num){
+    printf("UNLOAD\n");
+    for (int i = 0; i < num; i += 2) {
+        unsigned int id = ids[i/2];
+        printf("TRY %d\n", id);
+        float x = xys[i];
+        float y = xys[i + 1];
+        int x_tile = x / g.res;
+        int y_tile = y / g.res;
+        int grid_space = g.width * y_tile + x_tile;
+        marker_list *ml = g.g[grid_space];
+        marker_list *prev = NULL;
+        while(ml){
+            if (ml->m.id==id){
+                printf("REMOVING %d\n", ml->m.id);
+                //remove item
+                if(prev){
+                    prev->next= ml->next;
+                }
+                else{
+                    g.g[grid_space]=ml->next;
+                }
+                free(ml);
+                break;
+            }
+            prev=ml;
+            ml=ml->next;
+        }
+    }
+}
 float earth_distance(float lat1, float lng1, float lat2, float lng2) {
   float r = 6378137.0;
   float phi1 = lat1 * M_PI / 180;
