@@ -45,10 +45,12 @@
             </div>
             <div id="mapview-ui">
                 <div class="top">
-                <div class="right">
+                <div class="right" id="map-radios">
+                    <div class="right row" id="map-modes">
                     <input type="radio" checked name="mode" class="chbox-check ui-item" id="map-mode-view"></input><label for="map-mode-view" class="chbox-label ui-item">V</label>
                     <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-edit"></input><label for="map-mode-edit" class="chbox-label ui-item">E</label>
-                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-insert"></input><label for="map-mode-insert" class="chbox-label ui-item">I</label>
+                    <input type="radio" name="mode" class="chbox-check ui-item" id="map-mode-create"></input><label for="map-mode-create" class="chbox-label ui-item">C</label>
+                    </div>
                 </div>
                 </div>
                 <div class="bottom">
@@ -83,5 +85,6 @@
 <script src="/static/js/core/core.min.js"></script>
 <script src="/static/js/coreLoader.js"></script>
 <script src="/static/js/proxy.js"></script>
+<script src="/static/js/streetview.js"></script>
 <script src="/static/js/viewMap.js"></script>
 {%endblock%}

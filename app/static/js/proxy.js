@@ -1,3 +1,15 @@
+const anyRequest = (async (url, method, data) => {
+    const encodedUrl = btoa(url);
+    const proxyUrl = "/proxy/any?" + (new URLSearchParams({
+        "url": encodedUrl
+    })).toString();
+    const fetchArgs = {
+        method: method
+    };
+    if (data && method == "POST") fetchArgs.body = data;
+    const response = await fetch(proxyUrl, fetchArgs);
+    return response;
+});
 const apiRequest = (async (url, method, args) => {
 
     const encodedParams = btoa(JSON.stringify(args.params));
@@ -8,7 +20,7 @@ const apiRequest = (async (url, method, args) => {
     if (args.token) urlParamsDict["token"] = args.token;
     if (args.params) urlParamsDict["params"] = encodeURI(btoa(JSON.stringify(args.params)));
     const urlParams = new URLSearchParams(urlParamsDict).toString();
-    const proxyUrl = "/proxy" + url + "?" + urlParams;
+    const proxyUrl = "/proxy/gt" + url + "?" + urlParams;
     const fetchArgs = {
         method: method,
         headers: {
@@ -19,14 +31,19 @@ const apiRequest = (async (url, method, args) => {
     if (args.data && method == "POST") fetchArgs["body"] = JSON.stringify(args.data);
     const response = await fetch(proxyUrl, fetchArgs);
     var rjson = {};
-    try{
-     rjson = await response.json();
+    try {
+        rjson = await response.json();
+    } catch {
+        rjson = {
+            message: ""
+        }
     }
-    catch{
-         rjson = {message:""}
-    }
-    if(!response.ok){
-        return {"status":"error", "message":`geotastic connection failed: ${response.status} ${rjson.message}`,"response":null};
+    if (!response.ok) {
+        return {
+            "status": "error",
+            "message": `geotastic connection failed: ${response.status} ${rjson.message}`,
+            "response": null
+        };
     }
     return rjson;
 });
@@ -97,6 +114,14 @@ const getDropGroup = async (token, groupId) => {
         "token": token,
         "params": {
             "id": groupId
+        }
+    });
+};
+const reverseBatch = async (latlngs) => {
+    return await apiRequest("/reverseBatch", "POST", {
+        "server": "api01",
+        "data": {
+            "latLng": latlngs
         }
     });
 };

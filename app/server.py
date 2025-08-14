@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, abort
 import gt_api
 from gt_api.errors import GeotasticAPIError
 import base64
 import json
 import requests
+import validators
+
 #from flask_cors import cross_origin
 app = Flask(__name__, static_folder="static")
 
@@ -14,7 +16,7 @@ def index():
 @app.route("/login/")
 def login():
     return render_template("login.html")
-@app.route("/proxy/<path:url>", methods=["GET", "POST"])
+@app.route("/proxy/gt/<path:url>", methods=["GET", "POST"])
 def gt_proxy(url):
     server = request.args.get("server", "api")
     token = request.args.get("token")
@@ -37,6 +39,18 @@ def gt_proxy(url):
     except requests.exceptions.ConnectionError:
         return {"status":"error", "message":"failed to connect", "response":""}, 503
     return {"status":"ok", "message":"", "response":response}
+@app.route("/proxy/any", methods=["GET", "POST"])
+def any_proxy():
+    if "url" not in request.args:
+        return "Error", 400
+    try:
+        url = base64.b64decode(request.args["url"]).decode()
+    except:
+        return "Error", 400
+    if not validators.url(url):
+        return "Error", 400
+    resp = requests.request(request.method, url, data=request.form)
+    return resp.content, resp.status_code
 @app.route("/view/<string:w>/<path:id>") 
 def view_map(w,id):
     return render_template("view_map.html")

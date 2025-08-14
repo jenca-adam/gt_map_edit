@@ -31,4 +31,5 @@ const core = {
     boxSelect: Module.cwrap("box_select", "number", ["float", "float", "float", "float", "number"]),
     multiProject: Module.cwrap("multi_project", "", ["number", "number", "float", "float", "float", "float", "float", "number"]),
     fboCap: Module.cwrap("fbo_cap", "number", []),
+    printGrid: Module.cwrap("print_grid", "", []),
 };

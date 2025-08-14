@@ -261,6 +261,14 @@ html, body{
 #mapview-ui .ui-item{
     pointer-events: auto!important;
 }
+#map-radios{
+    flex-direction: column;
+}
+.row{
+    flex-direction: row;
+    display:flex;
+    margin: 0.2em 0 !important;
+}
 #mapview{
     display:flex;
     flex:1;

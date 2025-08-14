@@ -20,7 +20,7 @@ const showOwnMaps = () => {
                 $(clone).find(".map-count-count").text(map.contentLength);
                 $(clone).find(".map-count-what").text(map.dropType == "single" ? "drops" : "groups");
                 if (map.thumbnail) {
-                    $(clone).find(".map-image").attr("src", "https://static.infra.geotastic.net/map_images/" + map.thumbnail);
+                    $(clone).find(".map-image").attr("src", "https://static.geo.edutastic.de/map_images/" + map.thumbnail);
                 }
                 $(clone).find(".map").data("name", map.name.toLowerCase());
                 $(clone).find(".map-num-plays").text(map.timesPlayed);
@@ -76,7 +76,7 @@ const showOtherMaps = () => {
                 $(clone).find(".map-count-what").text(map.dropType == "single" ? "drops" : "groups");
                 $(clone).find(".map-owner").text(map.ownerData ? map.ownerData.nickname : "???");
                 if (map.thumbnail) {
-                    $(clone).find(".map-image").attr("src", "https://static.infra.geotastic.net/map_images/" + map.thumbnail);
+                    $(clone).find(".map-image").attr("src", "https://static.geo.edutastic.de/map_images/" + map.thumbnail);
                 }
                 $(clone).find(".map-num-plays").text(map.timesPlayed);
                 $(clone).find(".map-select").attr("data-id", map.id);
