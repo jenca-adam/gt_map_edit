@@ -143,5 +143,14 @@ const importDrops = async (token, drops, targetId, targetType, importType) => {
                 "importType": importType
             }
         }
-    })
+    });
+};
+
+const getDropInfoForBaseDropImport = async (token, drops) => {
+    return await apiRequest("/v1/drops/getDropInfoForBaseDropImport.php", "POST", {
+        "token": token,
+        "data": {
+            "data": drops
+        }
+    });
 };

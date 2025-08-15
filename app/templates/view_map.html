@@ -56,14 +56,15 @@
                 </div>
                 <div class="bottom">
                     <div class="left">
-                        <button class="button ui-item" id="save-map"><span class="iconify" data-icon="mdi-content-save"></span></button>
-                        <button class="button ui-item" id="map-settings-button"><span class="iconify" data-icon="mdi-cog"></span></button>
+                        <button class="button ui-item" title="Save map" id="save-map"><span class="iconify" data-icon="mdi-content-save"></span></button>
+                        <button class="button ui-item" title="Map settings" id="map-settings-button"><span class="iconify" data-icon="mdi-cog"></span></button>
+                        <button class="button ui-item" title="Import drops" id="import"><span class="iconify" data-icon="mdi-database-import"></span></button>
                     </div>
                     <div class="right">
                         <button class="button ui-item edit-mode" title="Delete selection" id="delete-selected"><span class="iconify" data-icon="mdi-delete"></span></button>
                         <button class="button ui-item" title="Reset map" id="reset-map"><span class="iconify" data-icon="mdi-crosshairs-gps"></span></button>
                         <button class="button ui-item" title="Select all" id="select-all"><span class="iconify" data-icon="mdi-select-all"></span></button>
-                        <button class="button ui-item" title="Export selection" id="export-selected"><span class="iconify" data-icon="mdi-export"></span></button>
+                        <button class="button ui-item" title="Export selection" id="export-selected"><span class="iconify" data-icon="mdi-database-export"></span></button>
                     </div>
                 </div>
 
@@ -76,6 +77,21 @@
                     <p class="formset"><input type="color" id="marker-color" value="#ff0000"></input><label for="marker-color" class="label">Marker color</label></p>
                     <p class="formset"><input type="range" min="5" max="30" step="0.1" id="marker-size" value="10"></input><label for="marker-size" class="label">Marker size</p>
                     <div class="center"><button id="map-settings-hide" class="button">Close</button><button id="map-settings-reset" class="button">Reset</button></div>
+                </div>
+            </div>
+            <div class="darkbox-container" id="importer">
+                <div id="importer-inner" class="darkbox">
+                    <h1 class="darkbox-title">Drop Import</h1>
+                    <div id="importer-content">
+                    <form id="import-form">
+                        <p class="formset"><input id="import-file" accept="application/json" type="file"></input></p>
+                    </form>
+                    <div id="importer-loading">
+                    <div class="loading"> <img class="loading-image-small" src="/static/images/loading.webp" width="50"></div>
+                    <div id="importer-loading-flavor">Fixing drops</div>
+                    </div>
+                    </div>
+                    <div class="center"><button id="importer-hide" class="button">Close</button><button id="importer-import" class="button" disabled>Import</button></div>
                 </div>
             </div>
         </div>

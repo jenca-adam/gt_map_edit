@@ -46,6 +46,7 @@ var filteredDrops;
 var remoteDrops;
 var hoveredMarker = null;
 var hoveredMarkerBuffer = 0;
+var importing = {};
 var minUsedId = 0x7FFFFFF; // avoid signed/unsigned problems
 
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -59,6 +60,15 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     minZoom: 1,
     attribution: '&copy; <a href="http://http.cat/418">Google</a>'
 });
+
+function makeBatched(arr, chunkSize) {
+    var chunks = []
+    while (arr.length) {
+        chunks.push(arr.slice(0, chunkSize));
+        arr = arr.slice(chunkSize);
+    }
+    return chunks;
+}
 // MARKER INTERACTION
 function cancelBoxDrag() {
     isDraggingBox = false;
@@ -146,8 +156,7 @@ $("#mapview-map").mouseup(function(ev) {
         requestPanorama(latlng.lat, latlng.lng, 1000, false).then(
             (drop) => {
                 if (drop) {
-                    drop.id = minUsedId - 1; // big ids to avoid collision with existing drops, ids get ignored(?) when importing with merge 
-                    minUsedId -= 1;
+                    drop.id = --minUsedId; // big ids to avoid collision with existing drops, ids get ignored(?) when importing with merge 
                     drops.push(drop);
                     bbox = getBbox(drops);
                     dropsById[drop.id] = drop;
@@ -485,29 +494,156 @@ function getMapUpdateData() {
     };
 }
 
+async function importDropsBatched(drops, method) {
+    var targetId = dgOrMap == "map" ? mapId : groupId;
+    const dropsBatched = makeBatched(drops, 200);
+    const futuresBatched = dropsBatched.map((batch) => importDrops(localStorage.token, batch, targetId, dgOrMap, method));
+    return await Promise.all(futuresBatched);
+}
+
+async function deleteDropsBatched(drops) {
+    var targetId = dgOrMap == "map" ? mapId : groupId;
+    const dropsBatched = makeBatched(drops, 100);
+    const futuresBatched = dropsBatched.map((batch) => deleteDrops(localStorage.token, batch));
+    return await Promise.all(futuresBatched);
+}
+
 function saveMap() {
     const mapUpdateData = getMapUpdateData();
+    if (!mapUpdateData.remove.length && !mapUpdateData.add.length) return;
+    $("#loading").show();
+    $("#loading-flavor").text("Saving");
+    var removeFinished = 1;
     if (mapUpdateData.remove.length) {
-        deleteDrops(localStorage.token, mapUpdateData.remove).then((response) => {
-            if (response.status != "ok") {
-                showError(response.message, () => {});
+        removeFinished = 0
+        deleteDropsBatched(mapUpdateData.remove).then((response) => {
+            for (const batchResponse of response) {
+                if (batchResponse.status != "ok") {
+                    showError(batchResponse.message, location.reload);
+                    removeFinished = 2;
+                    break;
+                }
             }
-            remoteDrops = drops;
+            if (!removeFinished) {
+                removeFinished = 1;
+                if (!mapUpdateData.add.length) {
+                    location.reload();
+                }
+            }
         });
+
     }
     if (mapUpdateData.add.length) {
-        var targetId = dgOrMap == "map" ? mapId : groupId;
-        importDrops(localStorage.token, mapUpdateData.add, targetId, dgOrMap, "merge").then((response) => {
+        importDropsBatched(mapUpdateData.add, "merge").then((response) => {
+            let quitEarly = false;
 
-            if (response.status != "ok") {
-                showError(response.message, () => {});
-            } else {
-                location.reload(); // super scuffed (need the new ids and i don't feel like writing 10000 lines of repeated code)
+            for (const batchResponse of response) {
+
+                if (batchResponse.status != "ok") {
+                    showError(response.message, location.reload);
+                    quitEarly = true;
+                    break;
+                }
+            }
+            if (!quitEarly) {
+                (async () => {
+                    while (!removeFinished) {
+                        await new Promise(r => setTimeout(r, 10));
+                    }
+                    return true;
+                })().then(() => {
+                    if (removeFinished == 1) {
+                        location.reload();
+                    }
+                });
             }
         });
     }
+}
+
+function validateDrops(json) {
+    var dropsToImport;
+    try {
+        dropsToImport = JSON.parse(json);
+    } catch {
+        showError("invalid json", () => {});
+        return;
+    }
+    console.log(dropsToImport);
+    if (!Array.isArray(dropsToImport)) {
+        if (dropsToImport.customCoordinates) {
+            dropsToImport = dropsToImport.customCoordinates.map((drop) => ({
+                style: "streetview",
+                lat: drop.lat,
+                lng: drop.lng,
+                panoId: drop.panoId || drop.extra.panoId,
+                heading: drop.heading,
+                pitch: drop.pitch,
+                zoom: drop.zoom,
+                code: drop.countryCode,
+                subCode: drop.stateCode
+            }));
+        } else {
+            showError("bad format: only geotastic and map-making.app formats supported", () => {});
+            return;
+        }
+    }
+    if (!dropsToImport.every((drop) => "lat" in drop && "lng" in drop)) {
+        showError("bad format: need lat and lng attributes in every drop", () => {});
+        return;
+    }
+    return dropsToImport;
 
 }
+
+function importDropsJson(json) {
+    const dropsToImport = validateDrops(json);
+    if (!dropsToImport) {
+        return
+    }
+    var dropIndex = 0;
+    const dropsToFix = dropsToImport.filter(drop => !(drop.code));
+    let processed = dropsToFix.map(drop => ({
+        dropIndex: dropIndex++,
+        fileIndex: 0,
+        lat: drop.lat,
+        lng: drop.lng,
+        skipPanoCheck: !!drop.panoId
+    }));
+
+    const batched = makeBatched(processed, 150);
+    const batchedFutures = batched.map((batch) =>
+        getDropInfoForBaseDropImport(localStorage.token, batch)
+    );
+    if (batched) {
+        $("#import-form").hide();
+        $("#importer-loading").show();
+    } else {
+        $("#importer-import").prop('disabled', false);
+        importing = dropsToImport;
+    }
+    Promise.all(batchedFutures).then((results) => {
+        console.log(results);
+        for (const batchResults of results) {
+            if (batchResults.status == "ok") {
+                for (const result of batchResults.response) {
+                    if (result.geocodingResult.status == "ok") {
+                        dropsToFix[result.dropIndex].code = result.geocodingResult.iso2;
+                        dropsToFix[result.dropIndex].subCode = result.geocodingResult.childIso2;
+                    }
+                    if (result.panoramaResult.status == "ok") {
+                        dropsToFix[result.dropIndex].panoId = result.panoId;
+                    }
+                }
+            }
+        }
+        $("#import-form").show();
+        $("#importer-loading").hide();
+        $("#importer-import").prop('disabled', false);
+        importing = dropsToImport;
+    });
+}
+
 // UI
 $("#export-selected").click(getSelectedMarkersJson);
 map.on("move", mapChanged)
@@ -626,6 +762,37 @@ $("#map-modes").on("change", function() {
         $(".edit-mode").hide()
     }
 
+});
+$("#import").click(function() {
+    $("#importer").show();
+});
+$("#importer-hide").click(function() {
+    $("#importer").hide();
+});
+$("#import-file").change(function() {
+    $(this).prop("files")[0].text().then((text) => importDropsJson(text));
+});
+$("#import-form").submit(function(ev) {
+    ev.preventDefault();
+    return false;
+});
+$("#importer-import").click(function() {
+    $(this).prop("disabled", true);
+    $("#importer").hide();
+    $("#import-file").val(null);
+    if (importing) {
+        for (var drop of importing) {
+            drop.id = --minUsedId;
+            drops.push(drop);
+            dropsById[drop.id] = drop;
+            dropEls[drop.id] = createDropElement(drop);
+            selectedMarkers.add(drop.id);
+        }
+        loadMarkers(importing);
+        makeMarkerBuffers();
+        drawMarkers();
+        $("#drop-filter-select").change();
+    }
 });
 // LOADING
 function createDropElement(drop) {
@@ -809,8 +976,8 @@ $(document).on("mouseleave", ".dl-item:has(.drop)", function(ev) {
     drawMarkers();
 });
 $(document).ready(function() {
-    $(".drops-only").hide();
-    $("#map-settings").hide();
+    $("#import-file").val(null);
+    $("#map-settings, #importer, #importer-loading, .drops-only").hide();
     if (!$("#map-mode-edit").is(":checked"))
         $(".edit-mode").hide();
 
