@@ -519,7 +519,7 @@ function saveMap() {
         deleteDropsBatched(mapUpdateData.remove).then((response) => {
             for (const batchResponse of response) {
                 if (batchResponse.status != "ok") {
-                    showError(batchResponse.message, location.reload);
+                    showError(batchResponse.message, ()=>{location.reload()});
                     removeFinished = 2;
                     break;
                 }
@@ -540,7 +540,7 @@ function saveMap() {
             for (const batchResponse of response) {
 
                 if (batchResponse.status != "ok") {
-                    showError(response.message, location.reload);
+                    showError(batchResponse.message, ()=>{location.reload()});
                     quitEarly = true;
                     break;
                 }
