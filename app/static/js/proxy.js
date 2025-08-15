@@ -1,6 +1,6 @@
-const anyRequest = (async (url, method, data) => {
+const gmRequest = (async (url, method, data) => {
     const encodedUrl = btoa(url);
-    const proxyUrl = "/proxy/any?" + (new URLSearchParams({
+    const proxyUrl = "/proxy/gm?" + (new URLSearchParams({
         "url": encodedUrl
     })).toString();
     const fetchArgs = {

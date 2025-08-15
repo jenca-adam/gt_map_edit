@@ -6,6 +6,7 @@ import base64
 import json
 import requests
 import validators
+import urllib.parse
 
 # from flask_cors import cross_origin
 app = Flask(__name__, static_folder="static")
@@ -50,16 +51,18 @@ def gt_proxy(url):
     return {"status": "ok", "message": "", "response": response}
 
 
-@app.route("/proxy/any", methods=["GET", "POST"])
+@app.route("/proxy/gm", methods=["GET", "POST"])
 def any_proxy():
     if "url" not in request.args:
-        return "Error", 400
+        abort(400)
     try:
         url = base64.b64decode(request.args["url"]).decode()
     except:
-        return "Error", 400
+        abort(400)
     if not validators.url(url):
-        return "Error", 400
+        return abort(400)
+    if urllib.parse.urlparse(url).netloc!="maps.googleapis.com":
+        return abort(403)
     resp = requests.request(request.method, url, data=request.form)
     return resp.content, resp.status_code
 

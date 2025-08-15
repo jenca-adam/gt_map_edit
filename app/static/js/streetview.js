@@ -5,7 +5,7 @@ const buildRequestUrl = ((lat, lng, radius, thirdParty) => {
 
 const requestPanorama = (async (lat, lng, radius, thirdParty) => {
     const url = buildRequestUrl(lat, lng, radius, thirdParty);
-    const response = await anyRequest(url);
+    const response = await gmRequest(url);
     const responseText = await response.text();
     console.log(responseText);
     const parsed = JSON.parse(responseText.substr(0, responseText.length - 1).split("(")[1]);
