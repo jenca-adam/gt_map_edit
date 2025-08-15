@@ -1,5 +1,5 @@
 /*
- * hi. welcome to the jankiest 800 lines of code this earth has ever seen
+ * hi. welcome to the jankiest 1000 lines of code this earth has ever seen
  *
  */
 
@@ -59,6 +59,10 @@ const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1
     maxZoom: 18,
     minZoom: 1,
     attribution: '&copy; <a href="http://http.cat/418">Google</a>'
+});
+const unofficialLayer = L.tileLayer('https://mts.googleapis.com/vt?pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*212b1!3m16!2sen!3sUS!12m4!1e68!2m2!1sset!2sRoadmap!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2ss.e%3Ag.f|p.c%3A%23bd5f1b%2Cs.e%3Ag.s|p.c%3A%23f7ca9e!5m1!5f1', {
+    maxZoom: 18,
+    minZoom: 1,
 });
 
 function makeBatched(arr, chunkSize) {
@@ -874,8 +878,9 @@ function loadSingleMap() {
 
 function loadGroupedMap() {
     $("#save-map").hide();
-    $("#deleted-selected").hide();
+    $("#delete-selected").hide();
     $("#map-modes").hide();
+    $("#import").hide();
     $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
     getPublicDropGroups(localStorage.token, mapId).then((response) => {
