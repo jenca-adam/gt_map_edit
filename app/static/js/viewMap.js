@@ -798,6 +798,12 @@ $("#importer-import").click(function() {
         $("#drop-filter-select").change();
     }
 });
+$("#edit-help-open").click(function(){
+    $("#edit-help").show();
+});
+$("#edit-help-hide").click(function(){
+    $("#edit-help").hide();
+});
 // LOADING
 function createDropElement(drop) {
     const clone = dTemplate.content.cloneNode(true);
@@ -982,7 +988,7 @@ $(document).on("mouseleave", ".dl-item:has(.drop)", function(ev) {
 });
 $(document).ready(function() {
     $("#import-file").val(null);
-    $("#map-settings, #importer, #importer-loading, .drops-only").hide();
+    $("#map-settings, #importer, #importer-loading, #edit-help, .drops-only").hide();
     if (!$("#map-mode-edit").is(":checked"))
         $(".edit-mode").hide();
 

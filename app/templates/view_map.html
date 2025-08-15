@@ -7,6 +7,9 @@
 {%block bannerl%}
 <button id="back-to-map" class="button drops-only">Back to map</button>
 {%endblock%}
+{%block bannerr%}
+<button class="button" id="edit-help-open">Help</button>
+{%endblock%}
 {%block body%}
 <template id="dg-template">
     <div class="dl-item">
@@ -69,7 +72,7 @@
                 </div>
 
             </div>
-            <div class="darkbox-container" id="map-settings">
+            <div class="darkbox-container db-global" id="map-settings">
                 <div id="map-settings-inner" class="darkbox">
                     <h1 class="darkbox-title">Map Settings</h1>
                     <p class="formset"><input type="checkbox" id="show-coverage" checked></input><label for="show-coverage" class="label">Show coverage</label></p>
@@ -79,7 +82,7 @@
                     <div class="center"><button id="map-settings-hide" class="button">Close</button><button id="map-settings-reset" class="button">Reset</button></div>
                 </div>
             </div>
-            <div class="darkbox-container" id="importer">
+            <div class="darkbox-container db-global" id="importer">
                 <div id="importer-inner" class="darkbox">
                     <h1 class="darkbox-title">Drop Import</h1>
                     <div id="importer-content">
@@ -92,6 +95,47 @@
                     </div>
                     </div>
                     <div class="center"><button id="importer-hide" class="button">Close</button><button id="importer-import" class="button" disabled>Import</button></div>
+                </div>
+            </div>
+            <div class="darkbox-container db-global" id="edit-help">
+                <div class="darkbox" id="edit-help-inner">
+                    <h1 class="darkbox-title">Editor Help</h1>
+                    <div id="edit-help-content">
+                        <p>
+                        This editor works a little differently from the built-in one. The main UI difference is that changes you make aren't submitted immediately, but only after you press the save(<span class="iconify" data-icon="mdi-content-save"></span>) button on the lower left. 
+                        </p>
+                        <p>
+                        The buttons on the top right let you switch between view mode (<span class="iconify" data-icon="mdi-eye-outline"></span>), edit mode (<span class="iconify" data-icon="mdi-pencil"></span>) and create mode (<span class="iconify" data-icon="mdi-plus"></span>).
+                        </p>
+                        <p>
+                        In view mode you can select markers and view them. Use Shift+drag to box select.
+                        Use the drop-down above the drop list to switch between viewing all markers and only the selected ones.<br>
+                        Edit mode adds an additional button, <span class="iconify" data-icon="mdi-delete"></span>. This button deletes all selected drops.<br>
+                        In create mode, you can click on the map to create a new drop. You cannot, however, select markers.
+                        </p>
+                        <p>
+                        Using the <span class="iconify" data-icon="mdi-cog"></span> button, you can change map appearance.<br>
+                        Using the <span class="iconify" data-icon="mdi-database-import"></span> button, you can import drops from JSON. Only the Geotastic and map-making.app formats are supported.
+                        </p>
+                        <p>
+                        Use the <span class="iconify" data-icon="mdi-crosshairs-gps"></span> button to reset the map to fit the drops.<br>
+                        Use the <span class="iconify" data-icon="mdi-select-all"></span> button to select all drops.<br>
+                        Use the <span class="iconify" data-icon="mdi-database-export"></span> button to export the selected drops.
+                        </p>
+                        <p>
+                        In the drop list, left click a drop to open it on Street View in a new tab, or middle click it to move the map to it
+                        </p>
+                        <p>
+                        If you have any further questions or would like to report a bug, contact me at <a href="mailto:root@gtedit.tech">root@gtedit.tech</a>
+                        </p>
+                        <p>
+                        The project is <a href="https://github.com/jenca-adam/gt_map_edit">open-source</a>.
+                        </p>
+                        <p>
+                        Don't forget to press save.
+                        </p>
+                    </div>
+                    <div class="center"><button class="button" id="edit-help-hide">Close</button></div>
                 </div>
             </div>
         </div>
