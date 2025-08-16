@@ -154,3 +154,19 @@ const getDropInfoForBaseDropImport = async (token, drops) => {
         }
     });
 };
+
+const createDropGroup = async(token, mapId, lat, lng, code, title, active, bias, other)=>{
+    return await apiRequest("/v1/maps/updateDropGroup.php", "POST", {
+        "token": token,
+        "data": {
+            "mapId": mapId,
+            "lat": lat,
+            "lng": lng,
+            "code": code,
+            "title": title,
+            "active": active,
+            "bias": bias,
+            ...other
+        }
+    });
+};

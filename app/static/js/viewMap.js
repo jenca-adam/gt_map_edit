@@ -112,6 +112,7 @@ function cancelBoxDrag() {
     L.DomUtil.enableTextSelection();
 
 }
+
 $("#mapview-map").mousedown(function(ev) {
     dragStartPos = [ev.clientX, ev.clientY];
     //MULTI SELECT
@@ -179,10 +180,23 @@ $("#mapview-map").mousemove(function(ev) {
     }
 });
 $("#mapview-map").mouseup(function(ev) {
-    if ($("#map-mode-create").is(":checked") && drops) {
-        if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
+    if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
+        return;
+    }
+
+    if (dgOrMap == "map" && mapData.dropType == "group") {
+        var layerPoint = map.mouseEventToLayerPoint(ev);
+        var latlng = map.layerPointToLatLng(layerPoint);
+        if (latlng.lng > 180 || latlng.lng < -180) {
             return;
         }
+        $("#new-drop-group-lat").val(latlng.lat);
+        $("#new-drop-group-lng").val(latlng.lng);
+        $("#new-drop-group-lat").change();
+        $("#new-drop-group").show();
+        return;
+    }
+    if ($("#map-mode-create").is(":checked") && drops) {
         var layerPoint = map.mouseEventToLayerPoint(ev);
         var latlng = map.layerPointToLatLng(layerPoint);
         requestPanorama(latlng.lat, latlng.lng, 1000, false).then(
@@ -222,9 +236,6 @@ $("#mapview-map").mouseup(function(ev) {
                 boxStart = null;
                 boxEnd = null;
             }
-        }
-        if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
-            return;
         }
         var offset = $("#mapview-map").offset();
         var x = ev.clientX - offset.left;
@@ -849,6 +860,40 @@ $("#edit-help-open").click(function() {
 $("#edit-help-hide").click(function() {
     $("#edit-help").hide();
 });
+$("#new-drop-group-hide").click(function() {
+    $("#new-drop-group").hide();
+});
+$("#new-drop-group-submit").click(function() {
+    $("#new-drop-group").hide();
+    createDropGroup(localStorage.token, mapId, $("#new-drop-group-lat").val(), $("#new-drop-group-lng").val(), $("#new-drop-group-code").val(), $("#new-drop-group-name").val(), true, $("#new-drop-group-bias").val()).then(response => {
+        if (response.status == "ok") {
+            location.reload(); // lazy as fuck
+        } else {
+            showError(response.message, () => {
+                location.reload()
+            });
+        }
+    });
+
+});
+$("#new-drop-group-lat, #new-drop-group-lng").change(function() {
+    const lat = $("#new-drop-group-lat").val();
+
+    const lng = $("#new-drop-group-lng").val();
+    reverseBatch([{
+        "lat": lat,
+        "lng": lng
+    }]).then(response => {
+        if (response.status != "ok" || response.response[0].status == "unknown") {
+            $("#new-drop-group-country").attr("src", "/static/images/flags/svg/invalid.svg")
+            $("#new-drop-group-code").val(null);
+        } else {
+            $("#new-drop-group-code").val(response.response[0].iso2);
+            $("#new-drop-group-country").attr("src", `/static/images/flags/svg/${response.response[0].iso2}.svg`);
+        }
+    });
+});
+
 // LOADING
 function createDropElement(drop) {
     const clone = dTemplate.content.cloneNode(true);
@@ -1033,7 +1078,7 @@ $(document).on("mouseleave", ".dl-item:has(.drop)", function(ev) {
 });
 $(document).ready(function() {
     $("#import-file").val(null);
-    $("#map-settings, #importer, #importer-loading, #edit-help, .drops-only").hide();
+    $("#map-settings, #importer, #importer-loading, #edit-help, #new-drop-group, .drops-only").hide();
     if (!$("#map-mode-edit").is(":checked"))
         $(".edit-mode").hide();
 
