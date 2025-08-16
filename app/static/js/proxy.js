@@ -117,6 +117,16 @@ const getDropGroup = async (token, groupId) => {
         }
     });
 };
+
+const getDropGroups = async(token, mapId) => {
+    return await apiRequest("/v1/maps/getDropGroups.php", "GET", {
+        "token": token,
+        "params": {
+            "mapId": mapId
+        }
+    });
+};
+
 const reverseBatch = async (latlngs) => {
     return await apiRequest("/reverseBatch", "POST", {
         "server": "api01",
@@ -170,3 +180,4 @@ const createDropGroup = async(token, mapId, lat, lng, code, title, active, bias,
         }
     });
 };
+

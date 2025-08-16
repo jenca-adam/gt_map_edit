@@ -47,6 +47,7 @@ var remoteDrops;
 var hoveredMarker = null;
 var hoveredMarkerBuffer = 0;
 var importing = {};
+var isOwnMap;
 var minUsedId = 0x7FFFFFF; // avoid signed/unsigned problems
 
 const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -946,10 +947,10 @@ function loadDropGroups(g) {
     for (var dg of dropGroups) {
         const clone = dgTemplate.content.cloneNode(true);
         $(clone).find(".drop-group-image").attr("src", "/static/images/flags/svg/" + dg.code + ".svg");
-        $(clone).find(".drop-group-name").text(dg.publicName);
+        $(clone).find(".drop-group-name").text(dg.publicName||dg.title);
         $(clone).find(".drop-count").text(dg.numberOfDrops);
         $(clone).find(".dl-item").data("id", dg.id);
-        $(clone).find(".dl-item").data("name", dg.publicName.toLowerCase());
+        $(clone).find(".dl-item").data("name", (dg.publicName||dg.title).toLowerCase());
         $(clone).find(".dl-item").click(function() {
             location.href = "/view/group/" + mapId + "/" + $(this).data("id")
         });
@@ -979,7 +980,8 @@ function loadGroupedMap() {
     $("#import").hide();
     $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
-    getPublicDropGroups(localStorage.token, mapId).then((response) => {
+    
+    (isOwnMap?getDropGroups:getPublicDropGroups)(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
             showError("Error while loading drop groups: " + response.message, function() {
                 location.href = "/"
@@ -1011,27 +1013,13 @@ function loadMap() {
         }
     });
 }
-
-function loadGroup() {
-    $(".drops-only").show();
-    $("#loading-flavor").text("Fetching group info");
-    groupId = Number(urlComponents[4]);
-    getPublicDropGroups(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
-            showError("Error while loading group: " + response.message, function() {
-                history.back()
-            });
-        } else {
-            for (var dg of response.response) {
-                if (dg.id == groupId)
-                    groupData = dg
-            }
-            if (!groupData) {
+function loadGroupFromGroupData(){
+    if (!groupData) {
                 showError("No group id " + groupId + " in map id " + mapId, function() {
                     history.back()
                 });
             } else {
-                $("#map-title").text(groupData.publicName);
+                $("#map-title").text(groupData.publicName||groupData.title);
                 $("#loading-flavor").text("Fetching drops");
                 getGroupDrops(localStorage.token, groupId).then((response) => {
                     if (response.status != "ok") {
@@ -1043,8 +1031,49 @@ function loadGroup() {
                     }
                 });
             }
+
+}
+function loadGroup() {
+    $(".drops-only").show();
+    $("#loading-flavor").text("Fetching group info");
+    groupId = Number(urlComponents[4]);
+    getPlayableMap(localStorage.token, mapId).then((response) => {
+        if (response.status != "ok") {
+            showError("Error while loading map data: " + response.message, function() {
+                location.href = "/"
+            });
+        } else {
+            mapData = response.response;
         }
     });
+    if(isOwnMap){
+        getDropGroup(localStorage.token, groupId).then((response)=>{
+            if (response.status != "ok"){
+                showError("Error while loading group: " + response.message, function (){
+                    history.back()
+                });
+            } else{
+                groupData = response.response;
+                loadGroupFromGroupData();
+            }
+        });
+    }
+    else{
+    getPublicDropGroups(localStorage.token, mapId).then((response) => {
+        if (response.status != "ok") {
+            showError("Error while loading group: " + response.message, function() {
+                history.back()
+            });
+        } else {
+            for (var dg of response.response) {
+                if (dg.id == groupId)
+                    groupData = dg
+            }
+            loadGroupFromGroupData();
+        }
+    });
+    }
+
 
 }
 
@@ -1081,7 +1110,7 @@ $(document).ready(function() {
     $("#map-settings, #importer, #importer-loading, #edit-help, #new-drop-group, .drops-only").hide();
     if (!$("#map-mode-edit").is(":checked"))
         $(".edit-mode").hide();
-
+    isOwnMap = JSON.parse(localStorage.ownMaps).includes(mapId); 
     loadMapSettings();
     dropPage = Number($("#dp-input").val()) - 1;
 

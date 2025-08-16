@@ -13,6 +13,7 @@ const showOwnMaps = () => {
             console.error(response.message);
         } else {
             ownMapList.hide();
+            localStorage.ownMaps = JSON.stringify(response.response.map((map)=>map.id));
             for (map of response.response) {
                 const clone = mapTemplate.content.cloneNode(true);
                 $(clone).find(".map-title").text(map.name);
