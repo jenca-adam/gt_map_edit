@@ -505,7 +505,7 @@ body {
     align-items: center;
 }
 
-#drop-filter-select {
+.select {
     flex: 1;
     background: #333;
     color: #eee;

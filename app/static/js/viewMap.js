@@ -49,21 +49,49 @@ var hoveredMarkerBuffer = 0;
 var importing = {};
 var minUsedId = 0x7FFFFFF; // avoid signed/unsigned problems
 
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     minZoom: 1,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
+});
 
+const gStreetsLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 18,
+    minZoom: 1,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+});
+const gHybridLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    maxZoom: 18,
+    minZoom: 1,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+});
+const gSatelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 18,
+    minZoom: 1,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+});
+const gTerrainLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    maxZoom: 18,
+    minZoom: 1,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+});
 const coverageLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m5!1m4!1i{z}!2i{x}!3i{y}!4i256!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e2*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*212b1!3m18!2sen!3sUS!5e0!12m4!1e68!2m2!1sset!2sRoadmap!12m4!1e37!2m2!1ssmartmaps!2s!12m4!1e26!2m2!1sstyles!2ss.e:g|p.c:#f03e3e|p.w:10,s.e:g.s|p.v:off!4i0!5m2!1e0!5f2', {
     maxZoom: 18,
     minZoom: 1,
     attribution: '&copy; <a href="http://http.cat/418">Google</a>'
 });
-const unofficialLayer = L.tileLayer('https://mts.googleapis.com/vt?pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*212b1!3m16!2sen!3sUS!12m4!1e68!2m2!1sset!2sRoadmap!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2ss.e%3Ag.f|p.c%3A%23bd5f1b%2Cs.e%3Ag.s|p.c%3A%23f7ca9e!5m1!5f1', {
+const unofficialLayer = L.tileLayer('https://maps.googleapis.com/maps/vt?pb=!1m4!1m3!1i{z}!2i{x}!3i{y}!2m8!1e2!2ssvv!4m2!1scc!2s*211m3*211e3*212b1*213e2*211m3*211e10*212b1*213e2*212b1*214b1!4m2!1ssvl!2s*212b1!3m16!2sen!3sUS!12m4!1e68!2m2!1sset!2sRoadmap!12m3!1e37!2m1!1ssmartmaps!12m4!1e26!2m2!1sstyles!2ss.e%3Ag.f|p.c%3A%23bd5f1b%2Cs.e%3Ag.s|p.c%3A%23f7ca9e!5m1!5f1', {
     maxZoom: 18,
     minZoom: 1,
 });
+const mapLayers = {
+    "osm": osmLayer,
+    "gm-street": gStreetsLayer,
+    "gm-hybrid": gHybridLayer,
+    "gm-satellite": gSatelliteLayer,
+    "gm-terrain": gTerrainLayer
+};
+var currentMapLayer;
 
 function makeBatched(arr, chunkSize) {
     var chunks = []
@@ -423,7 +451,8 @@ function mapSettingsChanged() {
         "showCoverage": $("#show-coverage").is(":checked"),
         "coverageOpacity": $("#coverage-opacity").val(),
         "markerColor": $("#marker-color").val(),
-        "markerSize": $("#marker-size").val()
+        "markerSize": $("#marker-size").val(),
+        "mapLayer": $("#map-layer").val()
     });
     mapChanged();
 }
@@ -439,6 +468,8 @@ function loadMapSettings() {
     $("#coverage-opacity").val(mapSettings.coverageOpacity);
     $("#coverage-opacity").trigger("input");
     $("#marker-color").val(mapSettings.markerColor);
+
+    $("#map-layer").change(mapSettingsChanged);
     $("#marker-size").val(mapSettings.markerSize);
 }
 
@@ -449,6 +480,7 @@ function resetMapSettings() {
     $("#coverage-opacity").trigger("input");
     $("#marker-color").val($("#marker-color").attr("value"));
     $("#marker-size").val($("#marker-size").attr("value"));
+    $("#map-layer").val($("#map-layer").attr("value"));
     mapSettingsChanged();
 }
 
@@ -523,7 +555,9 @@ function saveMap() {
         deleteDropsBatched(mapUpdateData.remove).then((response) => {
             for (const batchResponse of response) {
                 if (batchResponse.status != "ok") {
-                    showError(batchResponse.message, ()=>{location.reload()});
+                    showError(batchResponse.message, () => {
+                        location.reload()
+                    });
                     removeFinished = 2;
                     break;
                 }
@@ -544,7 +578,9 @@ function saveMap() {
             for (const batchResponse of response) {
 
                 if (batchResponse.status != "ok") {
-                    showError(batchResponse.message, ()=>{location.reload()});
+                    showError(batchResponse.message, () => {
+                        location.reload()
+                    });
                     quitEarly = true;
                     break;
                 }
@@ -691,6 +727,15 @@ $("#select-all").click(function() {
 });
 $("#marker-color").change(mapSettingsChanged);
 $("#marker-size").on('input', mapSettingsChanged);
+$("#map-layer").change(function() {
+    if (currentMapLayer) {
+        currentMapLayer.removeFrom(map);
+    }
+    currentMapLayer = mapLayers[$(this).val()];
+    currentMapLayer.addTo(map);
+    coverageLayer.bringToFront();
+    mapSettingsChanged();
+});
 $("#save-map").click(saveMap);
 $("#map-settings-button").click(function() {
     $("#map-settings").show();
@@ -798,10 +843,10 @@ $("#importer-import").click(function() {
         $("#drop-filter-select").change();
     }
 });
-$("#edit-help-open").click(function(){
+$("#edit-help-open").click(function() {
     $("#edit-help").show();
 });
-$("#edit-help-hide").click(function(){
+$("#edit-help-hide").click(function() {
     $("#edit-help").hide();
 });
 // LOADING
@@ -1006,6 +1051,7 @@ $(document).ready(function() {
     if ($("#show-coverage").is(":checked")) {
         coverageLayer.addTo(map);
     }
+    $("#map-layer").change();
     stretchOverlay();
     if (dgOrMap == "map") {
         loadMap();

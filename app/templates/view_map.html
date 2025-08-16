@@ -30,7 +30,7 @@
             </div>
             <div id="group-search" class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by group name"></input></div>
             <div class="filter drops-only maps-search" id="drop-filter">
-                <select id="drop-filter-select">
+                <select class="select" id="drop-filter-select">
                     <option name="all" value="All drops">All drops</option>
                     <option name="selected" value="Selected">Selected</option>
                 </select>
@@ -75,6 +75,15 @@
             <div class="darkbox-container db-global" id="map-settings">
                 <div id="map-settings-inner" class="darkbox">
                     <h1 class="darkbox-title">Map Settings</h1>
+                    <p class="formset">
+                        <select class="select" id="map-layer" value="gm-street">
+                            <option name="osm" value="osm">OSM</option>
+                            <option name="gm-street" value="gm-street">Google Maps</option>
+                            <option name="gm-hybrid" value="gm-hybrid">Google Maps (hybrid)</option>
+                            <option name="gm-satellite" value="gm-satellite">Google Maps (satellite)</option>
+                            <option name="gm-terrain" value="gm-terrain">Google Maps (terrain)</option>
+                        </select>
+                    </p>
                     <p class="formset"><input type="checkbox" id="show-coverage" checked></input><label for="show-coverage" class="label">Show coverage</label></p>
                     <p class="formset"><input type="range" id="coverage-opacity" value="1" min="0" max="1" step="0.01"></input><label for="coverage-opacity" class="label">Coverage opacity</label></p>
                     <p class="formset"><input type="color" id="marker-color" value="#ff0000"></input><label for="marker-color" class="label">Marker color</label></p>
