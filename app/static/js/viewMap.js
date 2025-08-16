@@ -469,7 +469,7 @@ function loadMapSettings() {
     $("#coverage-opacity").trigger("input");
     $("#marker-color").val(mapSettings.markerColor);
 
-    $("#map-layer").change(mapSettingsChanged);
+    $("#map-layer").val(mapSettings.mapLayer);
     $("#marker-size").val(mapSettings.markerSize);
 }
 
