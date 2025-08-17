@@ -181,11 +181,12 @@ $("#mapview-map").mousemove(function(ev) {
     }
 });
 $("#mapview-map").mouseup(function(ev) {
-    if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
-        return;
-    }
-
     if (dgOrMap == "map" && mapData.dropType == "group") {
+        if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
+            return;
+        }
+
+
         var layerPoint = map.mouseEventToLayerPoint(ev);
         var latlng = map.layerPointToLatLng(layerPoint);
         if (latlng.lng > 180 || latlng.lng < -180) {
@@ -198,6 +199,11 @@ $("#mapview-map").mouseup(function(ev) {
         return;
     }
     if ($("#map-mode-create").is(":checked") && drops) {
+        if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
+            return;
+        }
+
+
         var layerPoint = map.mouseEventToLayerPoint(ev);
         var latlng = map.layerPointToLatLng(layerPoint);
         requestPanorama(latlng.lat, latlng.lng, 1000, false).then(
@@ -236,8 +242,14 @@ $("#mapview-map").mouseup(function(ev) {
                 boxSelect(topLeftProjected[0], topLeftProjected[1], botRightProjected[0], botRightProjected[1]);
                 boxStart = null;
                 boxEnd = null;
+                return
             }
         }
+        if (dragStartPos[0] != ev.clientX || dragStartPos[1] != ev.clientY) {
+            return;
+        }
+
+
         var offset = $("#mapview-map").offset();
         var x = ev.clientX - offset.left;
         var y = ev.clientY - offset.top;
@@ -280,6 +292,7 @@ $("#mapview-map").mouseup(function(ev) {
 
 // utils
 function boxSelect(x1, y1, x2, y2) {
+    console.log("BOX SELECT");
     const idBuffer = core.createUintBuffer(drops.length);
     const numDrops = core.boxSelect(x1, y1, x2, y2, idBuffer);
     const dropIds = Module.HEAPU32.slice(idBuffer / Uint32Array.BYTES_PER_ELEMENT, idBuffer / Uint32Array.BYTES_PER_ELEMENT + numDrops);
@@ -947,10 +960,10 @@ function loadDropGroups(g) {
     for (var dg of dropGroups) {
         const clone = dgTemplate.content.cloneNode(true);
         $(clone).find(".drop-group-image").attr("src", "/static/images/flags/svg/" + dg.code + ".svg");
-        $(clone).find(".drop-group-name").text(dg.publicName||dg.title);
+        $(clone).find(".drop-group-name").text(dg.publicName || dg.title);
         $(clone).find(".drop-count").text(dg.numberOfDrops);
         $(clone).find(".dl-item").data("id", dg.id);
-        $(clone).find(".dl-item").data("name", (dg.publicName||dg.title).toLowerCase());
+        $(clone).find(".dl-item").data("name", (dg.publicName || dg.title).toLowerCase());
         $(clone).find(".dl-item").click(function() {
             location.href = "/view/group/" + mapId + "/" + $(this).data("id")
         });
@@ -980,8 +993,8 @@ function loadGroupedMap() {
     $("#import").hide();
     $("#loading-flavor").text("Fetching drop groups");
     $("#group-search").show();
-    
-    (isOwnMap?getDropGroups:getPublicDropGroups)(localStorage.token, mapId).then((response) => {
+
+    (isOwnMap ? getDropGroups : getPublicDropGroups)(localStorage.token, mapId).then((response) => {
         if (response.status != "ok") {
             showError("Error while loading drop groups: " + response.message, function() {
                 location.href = "/"
@@ -1013,26 +1026,28 @@ function loadMap() {
         }
     });
 }
-function loadGroupFromGroupData(){
+
+function loadGroupFromGroupData() {
     if (!groupData) {
-                showError("No group id " + groupId + " in map id " + mapId, function() {
+        showError("No group id " + groupId + " in map id " + mapId, function() {
+            history.back()
+        });
+    } else {
+        $("#map-title").text(groupData.publicName || groupData.title);
+        $("#loading-flavor").text("Fetching drops");
+        getGroupDrops(localStorage.token, groupId).then((response) => {
+            if (response.status != "ok") {
+                showError("Error while loading group drops: " + response.message, function() {
                     history.back()
                 });
             } else {
-                $("#map-title").text(groupData.publicName||groupData.title);
-                $("#loading-flavor").text("Fetching drops");
-                getGroupDrops(localStorage.token, groupId).then((response) => {
-                    if (response.status != "ok") {
-                        showError("Error while loading group drops: " + response.message, function() {
-                            history.back()
-                        });
-                    } else {
-                        loadDrops(response.response);
-                    }
-                });
+                loadDrops(response.response);
             }
+        });
+    }
 
 }
+
 function loadGroup() {
     $(".drops-only").show();
     $("#loading-flavor").text("Fetching group info");
@@ -1046,32 +1061,31 @@ function loadGroup() {
             mapData = response.response;
         }
     });
-    if(isOwnMap){
-        getDropGroup(localStorage.token, groupId).then((response)=>{
-            if (response.status != "ok"){
-                showError("Error while loading group: " + response.message, function (){
+    if (isOwnMap) {
+        getDropGroup(localStorage.token, groupId).then((response) => {
+            if (response.status != "ok") {
+                showError("Error while loading group: " + response.message, function() {
                     history.back()
                 });
-            } else{
+            } else {
                 groupData = response.response;
                 loadGroupFromGroupData();
             }
         });
-    }
-    else{
-    getPublicDropGroups(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
-            showError("Error while loading group: " + response.message, function() {
-                history.back()
-            });
-        } else {
-            for (var dg of response.response) {
-                if (dg.id == groupId)
-                    groupData = dg
+    } else {
+        getPublicDropGroups(localStorage.token, mapId).then((response) => {
+            if (response.status != "ok") {
+                showError("Error while loading group: " + response.message, function() {
+                    history.back()
+                });
+            } else {
+                for (var dg of response.response) {
+                    if (dg.id == groupId)
+                        groupData = dg
+                }
+                loadGroupFromGroupData();
             }
-            loadGroupFromGroupData();
-        }
-    });
+        });
     }
 
 
@@ -1110,7 +1124,7 @@ $(document).ready(function() {
     $("#map-settings, #importer, #importer-loading, #edit-help, #new-drop-group, .drops-only").hide();
     if (!$("#map-mode-edit").is(":checked"))
         $(".edit-mode").hide();
-    isOwnMap = JSON.parse(localStorage.ownMaps).includes(mapId); 
+    isOwnMap = JSON.parse(localStorage.ownMaps).includes(mapId);
     loadMapSettings();
     dropPage = Number($("#dp-input").val()) - 1;
 
