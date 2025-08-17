@@ -56,22 +56,22 @@ const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 });
 
-const gStreetsLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+const gStreetsLayer = L.tileLayer(`https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=${navigator.language}`, {
     maxZoom: 18,
     minZoom: 1,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 });
-const gHybridLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+const gHybridLayer = L.tileLayer(`https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}&hl=${navigator.language}`, {
     maxZoom: 18,
     minZoom: 1,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 });
-const gSatelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+const gSatelliteLayer = L.tileLayer(`https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&hl=${navigator.language}`, {
     maxZoom: 18,
     minZoom: 1,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 });
-const gTerrainLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+const gTerrainLayer = L.tileLayer(`https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}&hl=${navigator.language}`, {
     maxZoom: 18,
     minZoom: 1,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
