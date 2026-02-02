@@ -28,7 +28,7 @@ const showOwnMaps = () => {
                 }
                 $(clone).find(".map").data("name", map.name.toLowerCase());
                 $(clone).find(".map-num-plays").text(map.timesPlayed);
-                $(clone).find(".map-select").data("id", map.id);
+                $(clone).find(".map-select").attr("data-id", map.id);
                 $(clone).find(".map-select").text("Edit");
                 $(clone).find(".map-select").click(function() {
                     location.href = ("/view/map/" + $(this).data("id"))
