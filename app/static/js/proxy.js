@@ -1,8 +1,6 @@
+const PROXY_ROOT_URL = "/proxy";
 const gmRequest = (async (url, method, data) => {
-    const encodedUrl = btoa(url);
-    const proxyUrl = "/proxy/gm?" + (new URLSearchParams({
-        "url": encodedUrl
-    })).toString();
+    const proxyUrl = PROXY_ROOT_URL+"/gm/"+url;
     const fetchArgs = {
         method: method
     };
@@ -11,24 +9,21 @@ const gmRequest = (async (url, method, data) => {
     return response;
 });
 const apiRequest = (async (url, method, args) => {
-
+    let extraHeaders = {};
     const encodedParams = btoa(JSON.stringify(args.params));
-    const urlParamsDict = {
-        server: args.server || "backend01",
-        enc: Boolean(args.enc),
-    };
-    if (args.token) urlParamsDict["token"] = args.token;
-    if (args.params) urlParamsDict["params"] = encodeURI(btoa(JSON.stringify(args.params)));
-    const urlParams = new URLSearchParams(urlParamsDict).toString();
-    const proxyUrl = "/proxy/gt" + url + "?" + urlParams;
+    if (args.token) extraHeaders["X-Auth-Token"] = args.token;
+    const urlParams = new URLSearchParams(args.params||{}).toString();
+    const proxyUrl = PROXY_ROOT_URL+ "/gt/"+(args.server||"backend01")+ url + "?" + urlParams;
     const fetchArgs = {
         method: method,
         headers: {
             "Accept": "application/json",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...extraHeaders
         }
     }
-    if (args.data && method == "POST") fetchArgs["body"] = JSON.stringify(args.data);
+    let data = args.enc&&args.data?await encodeEncdata(args.data):args.data;
+    if (data && method == "POST") fetchArgs["body"] = JSON.stringify(data);
     const response = await fetch(proxyUrl, fetchArgs);
     var rjson = {};
     try {
@@ -45,7 +40,8 @@ const apiRequest = (async (url, method, args) => {
             "response": null
         };
     }
-    return rjson;
+    const resp = rjson.encData?await decodeEncdata(JSON.parse(rjson.encData)):rjson.data;
+    return {"status":rjson.status, "message":rjson.message, "response":resp};
 });
 const logIn = async (mail, password, fingerprint) => {
     const response = await apiRequest("/v1/user/login.php", "POST", {

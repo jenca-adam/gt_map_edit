@@ -3,7 +3,8 @@ const showFormError = (message) => {
 };
 const logInMailPassword = async (mail, password) => {
     const response = await logIn(mail, password, visitorId);
-    if (response.status != "ok") {
+    console.log(response);
+    if (response.status != "success") {
         console.error(response.message);
         showFormError(response.message);
         return null;
@@ -12,7 +13,7 @@ const logInMailPassword = async (mail, password) => {
 };
 const logInToken = async (token) => {
     const response = await getUserInfoViaToken(token);
-    if (response.status != "ok") {
+    if (response.status != "success") {
         console.error(response.message);
         showFormError(response.message);
         return null;
@@ -43,7 +44,7 @@ $("#form-mail-password").submit((ev) => {
         logInMailPassword($("#mail").val(), $("#password").val()).then((tok) => {
             localStorage.setItem("token", tok);
             getUserInfoViaToken(tok).then((response) => {
-                if (response.status == "ok") {
+                if (response.status == "success") {
                     localStorage.setItem("userData", JSON.stringify(response.response))
                     location.href = '/';
                 } else {

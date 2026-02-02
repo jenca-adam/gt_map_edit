@@ -1,0 +1,29 @@
+[
+  {
+    "file": "core/core.c",
+    "arguments": [
+      "clang",
+      "-target",
+      "wasm32-unknown-emscripten",
+      "-fignore-exceptions",
+      "-mllvm",
+      "-combiner-global-alias-analysis=false",
+      "-mllvm",
+      "-enable-emscripten-sjlj",
+      "-mllvm",
+      "-disable-lsr",
+      "--sysroot=/home/adam/.cache/emscripten/sysroot",
+      "-DEMSCRIPTEN",
+      "-Xclang",
+      "-iwithsysroot/include/fakesdl",
+      "-Xclang",
+      "-iwithsysroot/include/compat",
+      "-c",
+      "core/core.c",
+      "-o",
+      "/tmp/emscripten_temp_vhcnd3g9/core.o"
+    ],
+    "directory": "/home/adam/gt_map_edit",
+    "output": "/tmp/emscripten_temp_vhcnd3g9/core.o"
+  }
+]

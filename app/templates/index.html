@@ -18,20 +18,20 @@
 </template>
 <div id="site">
     <h1> Choose a map to view/edit </h1>
-    <div class="tabs">
+    <div class="tabs map-tabs">
         <div class="tablist">
             <button data-tab="tab-own" class="tab-button">Own maps</button>
             <button data-tab="tab-other" class="tab-button">Other maps</button>
         </div>
         <div class="tab active own" data-tab="tab-own">
             <div class="loading"> <img class="loading-image" src="/static/images/loading.webp" width="100"></div>
-            <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+            <div class="maps-search"> <input data-map-group="own" type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
             <div class="map-list">
             </div>
         </div>
         <div class="tab other" data-tab="tab-other">
             <div class="loading"> <img class="loading-image" src="/static/images/loading.webp" width="100"></div>
-            <div class="maps-search"> <input type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
+            <div class="maps-search"> <input data-map-group="other" type="text" class="maps-search-input" placeholder="Search by map name"></input></div>
             <div class="map-list">
 
             </div>

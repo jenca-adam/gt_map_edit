@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-from flask import Flask, render_template, request, abort
-import gt_api
-from gt_api.errors import GeotasticAPIError
+from flask import Flask, render_template, request, abort, Response
 import base64
 import json
 import requests
-import validators
 import urllib.parse
 
 # from flask_cors import cross_origin
@@ -22,49 +19,63 @@ def login():
     return render_template("login.html")
 
 
-@app.route("/proxy/gt/<path:url>", methods=["GET", "POST"])
-def gt_proxy(url):
-    server = request.args.get("server", "api")
-    token = request.args.get("token")
-    enc = request.args.get("enc") == "true"
-    if "params" in request.args:
-        params = json.loads(base64.b64decode(request.args["params"]))
-    else:
-        params = {}
-    url = f"https://{server}.geotastic.net/{url}"
-    kwargs = {}
-    if request.method == "POST":
-        data = request.json
-        if enc:
-            data = {"enc": gt_api.generic.encode_encdata(data)}
-        kwargs["json"] = data
+@app.route("/proxy/gt/<string:server>/<path:url>", methods=["GET", "POST", "OPTIONS"])
+def gt_proxy(server, url):
+    target_url = f"https://{server}.geotastic.net/{url}"
+    
+    headers = {k: v for k, v in request.headers if k.lower() not in ['host', 'content-length']}
+    headers["Origin"] = "https://geotastic.net"
+    headers["Referer"] = "https://geotastic.net/"
+    
     try:
-        response = gt_api.generic.process_response(
-            gt_api.generic.geotastic_api_request(
-                url, request.method, token, params=params, **kwargs
-            )
+        resp = requests.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            data=request.get_data(),
+            params=request.args,
+            cookies=request.cookies,
+            allow_redirects=False
         )
-    except GeotasticAPIError as e:
-        return {"status": "error", "message": str(e), "response": None}
-    except requests.exceptions.ConnectionError:
-        return {"status": "error", "message": "failed to connect", "response": ""}, 503
-    return {"status": "ok", "message": "", "response": response}
+    except requests.exceptions.RequestException as e:
+        return {"status": "error", "message": str(e)}, 502
 
+    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+    proxy_headers = [
+        (name, value) for (name, value) in resp.raw.headers.items()
+        if name.lower() not in excluded_headers
+    ]
+    
+    response = Response(resp.content, resp.status_code, proxy_headers)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
-@app.route("/proxy/gm", methods=["GET", "POST"])
-def any_proxy():
-    if "url" not in request.args:
-        abort(400)
+@app.route("/proxy/gm/<path:url>", methods=["GET", "POST", "OPTIONS"])
+def gm_proxy(url):
+    target_url = f"https://maps.googleapis.com/{url}"
+    headers = {k: v for k, v in request.headers if k.lower() not in ['host', 'content-length']}
     try:
-        url = base64.b64decode(request.args["url"]).decode()
-    except:
-        abort(400)
-    if not validators.url(url):
-        return abort(400)
-    if urllib.parse.urlparse(url).netloc!="maps.googleapis.com":
-        return abort(403)
-    resp = requests.request(request.method, url, data=request.form)
-    return resp.content, resp.status_code
+        resp = requests.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            data=request.get_data(),
+            params=request.args,
+            cookies=request.cookies,
+            allow_redirects=False
+        )
+    except requests.exceptions.RequestException as e:
+        return {"status": "error", "message": str(e)}, 502
+
+    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+    proxy_headers = [
+        (name, value) for (name, value) in resp.raw.headers.items()
+        if name.lower() not in excluded_headers
+    ]
+    
+    response = Response(resp.content, resp.status_code, proxy_headers)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 
 @app.route("/view/<string:w>/<path:id>")

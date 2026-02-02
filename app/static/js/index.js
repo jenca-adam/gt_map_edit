@@ -3,16 +3,19 @@ const ownMapList = $(".own>.map-list");
 const otherMapList = $(".other>.map-list");
 const mapThreshold = 250;
 var otherLoaded = false;
-var otherMaps;
 var mapElements = {};
-
+const mapGroups = {own:{list:ownMapList, maps:[]}, other:{list:otherMapList, maps:[]}};
 const showOwnMaps = () => {
     $(".tab.own .loading").show();
+
+    $(".tab.own .maps-search").hide(0);
+    $(".maps-search-input").keyup();
     getOwnMaps(localStorage.token).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             console.error(response.message);
         } else {
             ownMapList.hide();
+            mapGroups.own.maps = response.response;
             localStorage.ownMaps = JSON.stringify(response.response.map((map)=>map.id));
             for (map of response.response) {
                 const clone = mapTemplate.content.cloneNode(true);
@@ -30,45 +33,45 @@ const showOwnMaps = () => {
                 $(clone).find(".map-select").click(function() {
                     location.href = ("/view/map/" + $(this).data("id"))
                 });
-                $(".tab.own .maps-search-input").keyup();
-                ownMapList.append($(clone));
+                mapElements[map.id] = $('<div>').append(clone).html();
             }
+            
+            $(".tab.own .maps-search-input").keyup();
             $(".tab.own .loading").hide();
+            $(".tab.own .maps-search").show(100);
             ownMapList.show();
 
         }
-
     });
 }
 $(".maps-search-input").keyup(function() {
-    if (!otherMaps) return;
     var value = $(this).val().toLowerCase();
-    console.log(value);
-    otherMapList.empty();
+    let {list, maps} = mapGroups[$(this).data("map-group")];
+    if (!maps) return;
+    list.empty();
     var count = 0;
-
-    for (map of otherMaps) {
+    for (map of maps) {
         if (count >= mapThreshold) break;
 
         if (map.name.toLowerCase().includes(value)) {
-            console.log(map);
-            otherMapList.append(mapElements[map.id]);
+            list.append(mapElements[map.id]);
             count += 1
         }
-
     }
+
+
 });
 const showOtherMaps = () => {
     $(".tab.other .loading").show();
     $(".tab.other .maps-search").hide();
     otherLoaded = true;
     getPlayableMaps(localStorage.token).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             otherLoaded = false;
             console.error(response.message);
         } else {
             otherMapList.hide();
-            otherMaps = response.response;
+            mapGroups.other.maps = response.response;
             var count = 0;
             for (map of response.response) {
                 const clone = mapTemplate.content.cloneNode(true);
@@ -103,7 +106,7 @@ $(document).ready(() => {
         logOut();
     } else {
         getUserInfoViaToken(localStorage.token).then((response) => {
-            if (response.status != "ok") {
+            if (response.status != "success") {
                 logOut();
             }
             localStorage.userData = JSON.stringify(response.response);

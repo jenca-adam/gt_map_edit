@@ -579,7 +579,7 @@ function saveMap() {
         removeFinished = 0
         deleteDropsBatched(mapUpdateData.remove).then((response) => {
             for (const batchResponse of response) {
-                if (batchResponse.status != "ok") {
+                if (batchResponse.status != "success") {
                     showError(batchResponse.message, () => {
                         location.reload()
                     });
@@ -602,7 +602,7 @@ function saveMap() {
 
             for (const batchResponse of response) {
 
-                if (batchResponse.status != "ok") {
+                if (batchResponse.status != "success") {
                     showError(batchResponse.message, () => {
                         location.reload()
                     });
@@ -690,13 +690,13 @@ function importDropsJson(json) {
     Promise.all(batchedFutures).then((results) => {
         console.log(results);
         for (const batchResults of results) {
-            if (batchResults.status == "ok") {
+            if (batchResults.status == "success") {
                 for (const result of batchResults.response) {
-                    if (result.geocodingResult.status == "ok") {
+                    if (result.geocodingResult.status == "success") {
                         dropsToFix[result.dropIndex].code = result.geocodingResult.iso2;
                         dropsToFix[result.dropIndex].subCode = result.geocodingResult.childIso2;
                     }
-                    if (result.panoramaResult.status == "ok") {
+                    if (result.panoramaResult.status == "success") {
                         dropsToFix[result.dropIndex].panoId = result.panoId;
                     }
                 }
@@ -880,7 +880,7 @@ $("#new-drop-group-hide").click(function() {
 $("#new-drop-group-submit").click(function() {
     $("#new-drop-group").hide();
     createDropGroup(localStorage.token, mapId, $("#new-drop-group-lat").val(), $("#new-drop-group-lng").val(), $("#new-drop-group-code").val(), $("#new-drop-group-name").val(), true, $("#new-drop-group-bias").val()).then(response => {
-        if (response.status == "ok") {
+        if (response.status == "success") {
             location.reload(); // lazy as fuck
         } else {
             showError(response.message, () => {
@@ -898,7 +898,7 @@ $("#new-drop-group-lat, #new-drop-group-lng").change(function() {
         "lat": lat,
         "lng": lng
     }]).then(response => {
-        if (response.status != "ok" || response.response[0].status == "unknown") {
+        if (response.status != "success" || response.response[0].status == "unknown") {
             $("#new-drop-group-country").attr("src", "/static/images/flags/svg/invalid.svg")
             $("#new-drop-group-code").val(null);
         } else {
@@ -973,10 +973,10 @@ function loadDropGroups(g) {
 }
 
 function loadSingleMap() {
-
+    $("#back-to-map").hide();
     $("#loading-flavor").text("Fetching drops");
     getMapDrops(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             showError("Error while loading map drops: " + response.message, function() {
                 location.href = "/"
             });
@@ -995,7 +995,7 @@ function loadGroupedMap() {
     $("#group-search").show();
 
     (isOwnMap ? getDropGroups : getPublicDropGroups)(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             showError("Error while loading drop groups: " + response.message, function() {
                 location.href = "/"
             });
@@ -1010,7 +1010,7 @@ function loadMap() {
 
     $("#loading-flavor").text("Fetching map info");
     getPlayableMap(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             showError("Error while loading map data: " + response.message, function() {
                 location.href = "/"
             });
@@ -1036,7 +1036,7 @@ function loadGroupFromGroupData() {
         $("#map-title").text(groupData.publicName || groupData.title);
         $("#loading-flavor").text("Fetching drops");
         getGroupDrops(localStorage.token, groupId).then((response) => {
-            if (response.status != "ok") {
+            if (response.status != "success") {
                 showError("Error while loading group drops: " + response.message, function() {
                     history.back()
                 });
@@ -1053,7 +1053,7 @@ function loadGroup() {
     $("#loading-flavor").text("Fetching group info");
     groupId = Number(urlComponents[4]);
     getPlayableMap(localStorage.token, mapId).then((response) => {
-        if (response.status != "ok") {
+        if (response.status != "success") {
             showError("Error while loading map data: " + response.message, function() {
                 location.href = "/"
             });
@@ -1063,7 +1063,7 @@ function loadGroup() {
     });
     if (isOwnMap) {
         getDropGroup(localStorage.token, groupId).then((response) => {
-            if (response.status != "ok") {
+            if (response.status != "success") {
                 showError("Error while loading group: " + response.message, function() {
                     history.back()
                 });
@@ -1074,7 +1074,7 @@ function loadGroup() {
         });
     } else {
         getPublicDropGroups(localStorage.token, mapId).then((response) => {
-            if (response.status != "ok") {
+            if (response.status != "success") {
                 showError("Error while loading group: " + response.message, function() {
                     history.back()
                 });

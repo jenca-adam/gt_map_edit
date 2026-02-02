@@ -1,6 +1,6 @@
 const buildRequestUrl = ((lat, lng, radius, thirdParty) => {
     const imageType = thirdParty ? 10 : 2;
-    return `https://maps.googleapis.com/maps/api/js/GeoPhotoService.SingleImageSearch?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m4!1m2!3d${lat}!4d${lng}!2d${radius}!3m10!2m2!1sen_US!2sen_US!9m1!1e2!11m4!1m3!1e${imageType}!2b1!3e2!4m5!1e4!1e8!1e12!5m0!6m0&callback=callback`
+    return `/maps/api/js/GeoPhotoService.SingleImageSearch?pb=!1m5!1sapiv3!5sUS!11m2!1m1!1b0!2m4!1m2!3d${lat}!4d${lng}!2d${radius}!3m10!2m2!1sen_US!2sen_US!9m1!1e2!11m4!1m3!1e${imageType}!2b1!3e2!4m5!1e4!1e8!1e12!5m0!6m0&callback=callback`
 });
 
 const requestPanorama = (async (lat, lng, radius, thirdParty) => {
@@ -8,7 +8,10 @@ const requestPanorama = (async (lat, lng, radius, thirdParty) => {
     const response = await gmRequest(url);
     const responseText = await response.text();
     console.log(responseText);
-    const parsed = JSON.parse(responseText.substr(0, responseText.length - 1).split("(")[1]);
+    const components = responseText.split("(");
+    components.shift();
+    const json = components.join('');
+    const parsed = JSON.parse(json.substr(0,json.length-1));
     const panoOk = parsed[0][0] == 0;
     const panoMsg = panoOk ? "" : parsed[0][1];
     const panoInfo = parsed[1];
@@ -26,7 +29,7 @@ const requestPanorama = (async (lat, lng, radius, thirdParty) => {
             "lat": dropData.lat,
             "lng": dropData.lng,
         }]);
-        if (reverseResult.status == "ok") {
+        if (reverseResult.status == "success") {
             dropData.code = reverseResult.response[0].iso2 || "";
             dropData.subCode = reverseResult.response[0].childIso2 || "";
         }
