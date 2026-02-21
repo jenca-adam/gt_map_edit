@@ -13,7 +13,7 @@ const apiRequest = (async (url, method, args) => {
     const encodedParams = btoa(JSON.stringify(args.params));
     if (args.token) extraHeaders["X-Auth-Token"] = args.token;
     const urlParams = new URLSearchParams(args.params||{}).toString();
-    const proxyUrl = PROXY_ROOT_URL+ "/gt/"+(args.server||"backend01")+ url + "?" + urlParams;
+    const proxyUrl = PROXY_ROOT_URL+ "/gt/"+(args.server||"backend03")+ url + "?" + urlParams;
     const fetchArgs = {
         method: method,
         headers: {
